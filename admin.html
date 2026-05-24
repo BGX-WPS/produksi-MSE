@@ -3,87 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Admin</title>
+    <title>Login Admin</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f0f4f8; padding: 2rem; }
-        .container { max-width: 800px; margin: 0 auto; }
-        h1 { color: #005b96; text-align: center; margin-bottom: 2rem; font-weight: 600; }
-        .card { background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
-        h2 { color: #334155; margin: 1rem 0; font-size: 1.1rem; }
-        .input-group { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        input { flex:1; padding: 0.7rem; border: 1px solid #cbd5e1; border-radius: 6px; }
-        button { padding: 0.7rem 1rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; }
-        .btn-biru { background-color: #0071bc; color: white; }
-        .btn-kuning { background-color: #f59e0b; color: white; }
-        .btn-merah { background-color: #dc2626; color: white; }
-        .btn-keluar { background-color: #dc2626; color: white; float:right; margin-bottom:1rem; }
-        .list-item { display:flex; justify-content:space-between; align-items:center; padding:0.7rem; background:#f8fafc; border-radius:6px; margin-bottom:0.5rem; border:1px solid #e2e8f0; }
-        .link { color:#0071bc; text-decoration:none; font-weight:500; display:inline-block; margin-bottom:1rem; }
+        * {box-sizing: border-box; font-family: Arial, sans-serif; margin:0; padding:0;}
+        body {background: #f0f4f8; display:flex; align-items:center; justify-content:center; height:100vh;}
+        .box {background:white; padding:30px; border-radius:10px; width:100%; max-width:350px; box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+        h2 {text-align:center; color:#005b96; margin-bottom:20px;}
+        .form-group {margin-bottom:15px;}
+        label {display:block; margin-bottom:5px; font-size:14px;}
+        input {width:100%; padding:10px; border:1px solid #ccc; border-radius:5px;}
+        button {width:100%; padding:10px; background:#0071bc; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;}
+        button:hover {background:#005b96;}
+        a {display:block; text-align:center; margin-top:15px; color:#0071bc; text-decoration:none;}
     </style>
 </head>
 <body>
-    <div class="container">
-        <button class="btn-keluar" onclick="logout()">🚪 Logout</button>
-        <a href="index.html" class="link">← Kembali ke Menu</a>
-        <h1>Panel Administrasi</h1>
-
-        <div class="card">
-            <h2>Kelola Nama Pekerja</h2>
-            <div class="input-group">
-                <input type="text" id="namaPekerjaBaru" placeholder="Masukkan Nama...">
-                <button class="btn-biru" onclick="tambah('pekerja')">Tambah</button>
-            </div>
-            <div id="daftarPekerja"></div>
+    <div class="box">
+        <h2>🔑 LOGIN</h2>
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="user" value="admin" readonly>
         </div>
-
-        <div class="card">
-            <h2>Kelola Nama Mesin</h2>
-            <div class="input-group">
-                <input type="text" id="namaMesinBaru" placeholder="Masukkan Nama...">
-                <button class="btn-biru" onclick="tambah('mesin')">Tambah</button>
-            </div>
-            <div id="daftarMesin"></div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="pass" placeholder="Masukkan Sandi">
         </div>
+        <button onclick="cekLogin()">Masuk</button>
+        <a href="index.html">← Kembali</a>
     </div>
 
     <script>
-        // ✅ LINK SUDAH DIMASUKKAN
-        const URL_API = "https://script.google.com/macros/s/AKfycbxVtCwAYyxg9j-pw2Tny1V2hNfCxK8TO9kYDmLoR89oK_04ohX6ixLHQksMyvPVFD4l/exec";
-
-        // CEK AKSES
-        if(localStorage.getItem('isLogin') !== 'true') { alert('Akses ditolak! Harap Login Dulu.'); window.location.href = 'login.html'; }
-        function logout() { localStorage.removeItem('isLogin'); location.reload(); }
-
-        // FUNGSI AMBIL DATA
-        async function ambilDaftar(jenis) { return await fetch(URL_API + '?aksi=daftar_' + jenis).then(r=>r.json()); }
-        
-        // FUNGSI TAMBAH
-        async function tambah(jenis){
-            const nama = (jenis==='pekerja') ? document.getElementById('namaPekerjaBaru').value : document.getElementById('namaMesinBaru').value;
-            if(!nama.trim()) return alert("Nama tidak boleh kosong!");
-            await fetch(URL_API + `?aksi=kelola_${jenis}&metode=tambah&nama=${nama}`, {method:'POST'});
-            muatSemua();
-            (jenis==='pekerja') ? document.getElementById('namaPekerjaBaru').value='' : document.getElementById('namaMesinBaru').value='';
+        const PASS_BENAR = "123456";
+        function cekLogin() {
+            if(document.getElementById('pass').value === PASS_BENAR) {
+                localStorage.setItem('isLogin', 'true');
+                window.location.href = "admin.html";
+            } else {
+                alert("Password salah!");
+            }
         }
-        
-        // FUNGSI HAPUS
-        async function hapus(jenis,idx){ if(confirm("Yakin hapus?")) { await fetch(URL_API + `?aksi=kelola_${jenis}&metode=hapus&idx=${idx}`, {method:'POST'}); muatSemua(); } }
-        
-        // FUNGSI UBAH
-        async function ubah(jenis,idx,lama){ const baru=prompt('Ubah nama:',lama);if(baru && baru.trim()){await fetch(URL_API + `?aksi=kelola_${jenis}&metode=ubah&idx=${idx}&namaBaru=${baru}`, {method:'POST'}); muatSemua();} }
-        
-        // TAMPILKAN KE LAYAR
-        async function muatSemua(){
-            const p = await ambilDaftar('pekerja');
-            const m = await ambilDaftar('mesin');
-            let ep = document.getElementById('daftarPekerja'), em = document.getElementById('daftarMesin');
-            ep.innerHTML='';em.innerHTML='';
-            p.forEach((n,i)=>ep.innerHTML+=`<div class="list-item"><span>${n}</span><div><button class="btn-kuning" onclick="ubah('pekerja',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('pekerja',${i})">Hapus</button></div></div>`);
-            m.forEach((n,i)=>em.innerHTML+=`<div class="list-item"><span>${n}</span><div><button class="btn-kuning" onclick="ubah('mesin',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('mesin',${i})">Hapus</button></div></div>`);
-        }
-
-        muatSemua();
     </script>
 </body>
 </html>
