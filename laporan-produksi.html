@@ -6,555 +6,173 @@
     <title>Laporan Produksi - Semua Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { primary: '#005b96', secondary: '#0071bc', netral: '#f0f4f8', },
-                    fontFamily: { sans: ['Segoe UI', 'Roboto', 'sans-serif'], },
-                }
-            }
-        }
+        tailwind.config = {theme:{extend:{colors:{primary:'#005b96',secondary:'#0071bc',netral:'#f0f4f8'}}}}
     </script>
-    <style type="text/tailwindcss">
-        @layer utilities { .content-auto { content-visibility: auto; } .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; } .scrollbar-hide::-webkit-scrollbar { display: none; } }
-    </style>
 </head>
-<body class="bg-netral font-sans min-h-screen py-8 px-4">
-    <div class="max-w-7xl mx-auto">
-        <h1 class="text-[clamp(1.8rem,3vw,2.2rem)] font-bold text-primary text-center mb-8">📊 Laporan Data Produksi</h1>
-        <a href="index.html" class="text-secondary font-medium hover:underline inline-block mb-6"><i class="fa fa-arrow-left mr-1"></i> Kembali ke Beranda</a>
+<body class="bg-netral min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-bold text-primary text-center mb-6">📊 LAPORAN DATA PRODUKSI</h1>
+        <a href="index.html" class="text-secondary mb-4 inline-block"><i class="fa fa-arrow-left"></i> Kembali</a>
 
-        <!-- PANEL ADMIN -->
-        <div id="panelAdmin" class="hidden bg-white rounded-xl shadow-md border border-gray-200 p-5 mb-6 transition-all duration-300">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div><p class="text-primary font-semibold text-lg"><i class="fa fa-user-circle mr-2"></i>Mode Administrator</p><p class="text-sm text-gray-500">Kelola data di sini</p></div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <div class="relative group">
-                        <button class="bg-gradient-to-b from-secondary to-primary text-white px-5 py-2.5 rounded-lg shadow-md"><i class="fa fa-download"></i> Unduh <i class="fa fa-angle-down ml-1"></i></button>
-                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border z-10 hidden group-hover:block">
-                            <ul class="py-2">
-                                <li><button onclick="unduhExcel()" class="w-full text-left px-4 py-2 hover:bg-netral"><i class="fa fa-file-excel-o text-green-600"></i> Excel</button></li>
-                                <li><button onclick="unduhCSV()" class="w-full text-left px-4 py-2 hover:bg-netral"><i class="fa fa-file-text-o text-blue-600"></i> CSV</button></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <button onclick="logout()" class="bg-red-600 text-white px-3 py-2 rounded-lg text-sm">Logout</button>
-                </div>
+        <!-- Panel Admin -->
+        <div id="panelAdmin" class="hidden bg-white p-4 rounded-lg shadow mb-5 flex flex-wrap gap-3 items-center justify-between">
+            <span class="text-primary font-semibold"><i class="fa fa-user-circle"></i> Mode Admin</span>
+            <div>
+                <button onclick="unduhExcel()" class="bg-green-600 text-white px-3 py-1 rounded"><i class="fa fa-file-excel-o"></i> Unduh Excel</button>
+                <button onclick="logout()" class="bg-red-600 text-white px-3 py-1 rounded">Logout</button>
             </div>
         </div>
 
-        <!-- TABEL DATA -->
-        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-x-auto scrollbar-hide">
-            <table class="w-full text-sm text-left">
-                <thead class="bg-gradient-to-r from-secondary to-primary text-white uppercase">
+        <!-- TABEL DATA (TANPA FILTER) -->
+        <div class="bg-white rounded-lg shadow overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gradient-to-r from-secondary to-primary text-white">
                     <tr>
-                        <th class="px-4 py-3">No</th>
-                        <th class="px-4 py-3">Tanggal</th>
-                        <th class="px-4 py-3">Waktu</th>
-                        <th class="px-4 py-3">Pekerja</th>
-                        <th class="px-4 py-3">Mesin</th>
-                        <th class="px-4 py-3">Nama File</th>
-                        <th class="px-4 py-3">Stitch</th>
-                        <th class="px-4 py-3">Persen</th>
-                        <th class="px-4 py-3">Jml Kerja</th>
-                        <th class="px-4 py-3">Pemesan</th>
-                        <th id="kolomAksi" class="px-4 py-3 text-center hidden">Aksi</th>
+                        <th class="p-2 text-center">No</th>
+                        <th class="p-2">Tanggal</th>
+                        <th class="p-2">Waktu</th>
+                        <th class="p-2">Pekerja</th>
+                        <th class="p-2">Mesin</th>
+                        <th class="p-2">Nama File</th>
+                        <th class="p-2 text-right">Stitch</th>
+                        <th class="p-2 text-center">Persen</th>
+                        <th class="p-2 text-right">Jumlah</th>
+                        <th class="p-2">Pemesan</th>
+                        <th id="kolomAksi" class="p-2 text-center hidden">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="isiTabel" class="divide-y divide-gray-200">
-                    <tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">🔄 Memuat data...</td></tr>
+                    <tr><td colspan="11" class="p-4 text-center text-gray-500">🔄 Memuat data...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // ✅ LINK SUDAH DIMASUKKAN
-        const URL_API = "https://script.google.com/macros/s/AKfycbxVtCwAYyxg9j-pw2Tny1V2hNfCxK8TO9kYDmLoR89oK_04ohX6ixLHQksMyvPVFD4l/exec";
+        // ✅ LINK SUDAH DIPASANG
+        const URL_API = "https://script.google.com/macros/s/AKfycbyRFTGf51YWezOXbwp6FqaJ7Y9f7mN6iGn4OshnU6QbgO9fCT0s3wDU1cZvGI_t6LcM/exec";
 
-        const adalahAdmin = localStorage.getItem('isLogin') === 'true';
-        let semuaData = [];
+        const IS_ADMIN = localStorage.getItem('isLogin') === 'true';
+        let DATA = [];
 
-        function logout() { localStorage.removeItem('isLogin'); alert('Keluar berhasil.'); location.reload(); }
+        function logout() { localStorage.removeItem('isLogin'); location.reload(); }
 
-        // Ubah format tanggal & waktu dari teks panjang jadi mudah dibaca
-        function ubahFormatWaktu(teks) {
-            if (!teks) return "-";
-            // Jika format tanggal ISO
-            if (teks.includes("T")) {
-                const tanggal = new Date(teks);
-                // Cek apakah ini waktu jam atau tanggal
-                if (teks.includes("1899-12-30")) {
-                    // Ini kolom WAKTU, ambil jam-menit
-                    return tanggal.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-                } else {
-                    // Ini kolom TANGGAL
-                    return tanggal.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'});
-                }
+        // 🔧 PERBAIKAN FORMAT TANGGAL & WAKTU
+        function formatTanggal(isoString) {
+            if (!isoString) return "-";
+            // Jika format waktu dari sheet (1899-12-30 adalah penanda waktu)
+            if (isoString.includes("1899-12-30")) {
+                const jam = new Date(isoString);
+                return jam.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
             }
-            return teks;
+            // Jika format tanggal biasa
+            const tgl = new Date(isoString);
+            return tgl.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'});
         }
 
-        // AMBIL DATA
-        async function ambilData() {
-            document.getElementById('isiTabel').innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">🔄 Memuat data...</td></tr>';
-            try {
-                const res = await fetch(URL_API);
-                if (!res.ok) throw new Error("Gagal terhubung ke server");
-
-                const hasil = await res.json();
-                console.log("Data diterima:", hasil);
-
-                if (Array.isArray(hasil)) {
-                    semuaData = hasil;
-                } else {
-                    throw new Error("Format data tidak dikenali");
-                }
-
-                tampilkanKeTabel();
-
-            } catch (err) {
-                console.error("Error:", err);
-                document.getElementById('isiTabel').innerHTML = `
-                <tr>
-                    <td colspan="11" class="px-4 py-6 text-center text-red-500">
-                        ❌ Gagal memuat data<br>
-                        <b>Pesan:</b> ${err.message}
-                    </td>
-                </tr>`;
-            }
+        function formatWaktu(isoString) {
+            if (!isoString) return "-";
+            const jam = new Date(isoString);
+            return jam.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
         }
-
-        // TAMPILKAN KE TABEL
-        function tampilkanKeTabel() {
-            const isi = document.getElementById('isiTabel');
-            isi.innerHTML = '';
-
-            if(semuaData.length === 0) {
-                isi.innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">📭 Belum ada data tersimpan.</td></tr>';
-                return;
-            }
-
-            semuaData.forEach((item, i) => {
-                let persenTeks = item.persen || "";
-                if(persenTeks && !persenTeks.includes('%') && !isNaN(persenTeks)) persenTeks = persenTeks + '%';
-
-                const kolomAksi = adalahAdmin ? `
-                    <td class="px-4 py-2 text-center">
-                        <button class="bg-amber-500 text-white px-2 py-1 rounded text-xs" onclick="editData(${i})">Ubah</button>
-                        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs ml-1" onclick="hapusData(${i})">Hapus</button>
-                    </td>` : `<td class="px-4 py-2 text-center">-</td>`;
-
-                isi.innerHTML += `
-                    <tr class="hover:bg-netral transition-colors">
-                        <td class="px-4 py-2">${i+1}</td>
-                        <td class="px-4 py-2">${ubahFormatWaktu(item.tanggal)}</td>
-                        <td class="px-4 py-2">${ubahFormatWaktu(item.waktu)}</td>
-                        <td class="px-4 py-2">${item.pekerja || '-'}</td>
-                        <td class="px-4 py-2">${item.mesin || '-'}</td>
-                        <td class="px-4 py-2">${item.namaFile || '-'}</td>
-                        <td class="px-4 py-2">${item.stitch || '-'}</td>
-                        <td class="px-4 py-2 font-medium text-blue-700">${persenTeks}</td>
-                        <td class="px-4 py-2">${item.jumlah || '-'}</td>
-                        <td class="px-4 py-2">${item.pemesan || '-'}</td>
-                        ${kolomAksi}
-                    </tr>`;
-            });
-        }
-
-        // UNDUH
-        function unduhExcel(){
-            if(semuaData.length === 0) return alert("⚠️ Tidak ada data.");
-            const dataUntukUnduh = semuaData.map((item, i) => ({
-                "No":i+1,"Tanggal":ubahFormatWaktu(item.tanggal),"Waktu":ubahFormatWaktu(item.waktu),"Pekerja":item.pekerja,"Mesin":item.mesin,
-                "Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan
-            }));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUntukUnduh), "Data");
-            XLSX.writeFile(wb, `Laporan_Semua_Data.xlsx`);
-        }
-        function unduhCSV(){
-            if(semuaData.length === 0) return;
-            const dataUntukUnduh = semuaData.map((item, i) => ({"No":i+1,"Tanggal":ubahFormatWaktu(item.tanggal),"Waktu":ubahFormatWaktu(item.waktu),"Pekerja":item.pekerja,"Mesin":item.mesin,"Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan}));
-            const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(dataUntukUnduh));
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-            a.download = `Laporan_Semua_Data.csv`; a.click();
-        }
-
-        // EDIT & HAPUS
-        async function editData(index) {
-            if(!adalahAdmin) return;
-            const item = semuaData[index];
-            const baru = { 
-                tanggal:prompt('Tanggal:',item.tanggal),waktu:prompt('Waktu:',item.waktu),
-                pekerja:prompt('Pekerja:',item.pekerja),mesin:prompt('Mesin:',item.mesin),
-                namaFile:prompt('Nama File:',item.namaFile),stitch:prompt('Stitch:',item.stitch),
-                persen:prompt('Persen:',item.persen),jumlah:prompt('Jumlah:',item.jumlah),pemesan:prompt('Pemesan:',item.pemesan)
-            };
-            if(!baru.pekerja) return;
-            await fetch(`${URL_API}?aksi=ubah&indeks=${index}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
-            ambilData();
-        }
-        async function hapusData(index) {
-            if(!adalahAdmin || !confirm('Yakin hapus?')) return;
-            await fetch(`${URL_API}?aksi=hapus&indeks=${index}`, {method:'POST'});
-            ambilData();
-        }
-
-        // MULAI
-        window.onload = function() {
-            if(adalahAdmin) { 
-                document.getElementById('kolomAksi').classList.remove('hidden'); 
-                document.getElementById('panelAdmin').classList.remove('hidden'); 
-            }
-            ambilData();
-        };
-    </script>
-</body>
-</html>
-                    // Ini kolom TANGGAL
-                    return tanggal.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'});
-                }
-            }
-            return teks;
-        }
-
-        // AMBIL DATA
-        async function ambilData() {
-            document.getElementById('isiTabel').innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">🔄 Memuat data...</td></tr>';
-            try {
-                const res = await fetch(URL_API);
-                if (!res.ok) throw new Error("Gagal terhubung ke server");
-
-                const hasil = await res.json();
-                console.log("Data diterima:", hasil);
-
-                if (Array.isArray(hasil)) {
-                    semuaData = hasil;
-                } else {
-                    throw new Error("Format data tidak dikenali");
-                }
-
-                tampilkanKeTabel();
-
-            } catch (err) {
-                console.error("Error:", err);
-                document.getElementById('isiTabel').innerHTML = `
-                <tr>
-                    <td colspan="11" class="px-4 py-6 text-center text-red-500">
-                        ❌ Gagal memuat data<br>
-                        <b>Pesan:</b> ${err.message}
-                    </td>
-                </tr>`;
-            }
-        }
-
-        // TAMPILKAN KE TABEL
-        function tampilkanKeTabel() {
-            const isi = document.getElementById('isiTabel');
-            isi.innerHTML = '';
-
-            if(semuaData.length === 0) {
-                isi.innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">📭 Belum ada data tersimpan.</td></tr>';
-                return;
-            }
-
-            semuaData.forEach((item, i) => {
-                let persenTeks = item.persen || "";
-                if(persenTeks && !persenTeks.includes('%') && !isNaN(persenTeks)) persenTeks = persenTeks + '%';
-
-                const kolomAksi = adalahAdmin ? `
-                    <td class="px-4 py-2 text-center">
-                        <button class="bg-amber-500 text-white px-2 py-1 rounded text-xs" onclick="editData(${i})">Ubah</button>
-                        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs ml-1" onclick="hapusData(${i})">Hapus</button>
-                    </td>` : `<td class="px-4 py-2 text-center">-</td>`;
-
-                isi.innerHTML += `
-                    <tr class="hover:bg-netral transition-colors">
-                        <td class="px-4 py-2">${i+1}</td>
-                        <td class="px-4 py-2">${ubahFormatWaktu(item.tanggal)}</td>
-                        <td class="px-4 py-2">${ubahFormatWaktu(item.waktu)}</td>
-                        <td class="px-4 py-2">${item.pekerja || '-'}</td>
-                        <td class="px-4 py-2">${item.mesin || '-'}</td>
-                        <td class="px-4 py-2">${item.namaFile || '-'}</td>
-                        <td class="px-4 py-2">${item.stitch || '-'}</td>
-                        <td class="px-4 py-2 font-medium text-blue-700">${persenTeks}</td>
-                        <td class="px-4 py-2">${item.jumlah || '-'}</td>
-                        <td class="px-4 py-2">${item.pemesan || '-'}</td>
-                        ${kolomAksi}
-                    </tr>`;
-            });
-        }
-
-        // UNDUH
-        function unduhExcel(){
-            if(semuaData.length === 0) return alert("⚠️ Tidak ada data.");
-            const dataUntukUnduh = semuaData.map((item, i) => ({
-                "No":i+1,"Tanggal":ubahFormatWaktu(item.tanggal),"Waktu":ubahFormatWaktu(item.waktu),"Pekerja":item.pekerja,"Mesin":item.mesin,
-                "Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan
-            }));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUntukUnduh), "Data");
-            XLSX.writeFile(wb, `Laporan_Semua_Data.xlsx`);
-        }
-        function unduhCSV(){
-            if(semuaData.length === 0) return;
-            const dataUntukUnduh = semuaData.map((item, i) => ({"No":i+1,"Tanggal":ubahFormatWaktu(item.tanggal),"Waktu":ubahFormatWaktu(item.waktu),"Pekerja":item.pekerja,"Mesin":item.mesin,"Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan}));
-            const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(dataUntukUnduh));
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-            a.download = `Laporan_Semua_Data.csv`; a.click();
-        }
-
-        // EDIT & HAPUS
-        async function editData(index) {
-            if(!adalahAdmin) return;
-            const item = semuaData[index];
-            const baru = { 
-                tanggal:prompt('Tanggal:',item.tanggal),waktu:prompt('Waktu:',item.waktu),
-                pekerja:prompt('Pekerja:',item.pekerja),mesin:prompt('Mesin:',item.mesin),
-                namaFile:prompt('Nama File:',item.namaFile),stitch:prompt('Stitch:',item.stitch),
-                persen:prompt('Persen:',item.persen),jumlah:prompt('Jumlah:',item.jumlah),pemesan:prompt('Pemesan:',item.pemesan)
-            };
-            if(!baru.pekerja) return;
-            await fetch(`${URL_API}?aksi=ubah&indeks=${index}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
-            ambilData();
-        }
-        async function hapusData(index) {
-            if(!adalahAdmin || !confirm('Yakin hapus?')) return;
-            await fetch(`${URL_API}?aksi=hapus&indeks=${index}`, {method:'POST'});
-            ambilData();
-        }
-
-        // MULAI
-        window.onload = function() {
-            if(adalahAdmin) { 
-                document.getElementById('kolomAksi').classList.remove('hidden'); 
-                document.getElementById('panelAdmin').classList.remove('hidden'); 
-            }
-            ambilData();
-        };
-    </script>
-</body>
-</html>
-                    document.getElementById('isiTabel').innerHTML = `<tr><td colspan="11" class="px-4 py-6 text-center text-red-500">❌ Error: ${hasil.pesan}</td></tr>`;
-                    semuaData = [];
-                } else {
-                    semuaData = hasil;
-                    // TANPA FILTER: Langsung tampilkan SEMUA data yang diambil
-                    dataFilter = semuaData; 
-                    tampilkanKeTabel();
-                }
-            } catch (err) {
-                document.getElementById('isiTabel').innerHTML = `<tr><td colspan="11" class="px-4 py-6 text-center text-red-500">❌ Gagal memuat data.<br>Cek Link / Nama Sheet / Koneksi.</td></tr>`;
-            }
-        }
-
-        // TAMPILKAN DATA KE DALAM TABEL HTML
-        function tampilkanKeTabel() {
-            const isi = document.getElementById('isiTabel');
-            isi.innerHTML = '';
-            
-            if(dataFilter.length === 0) {
-                isi.innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">📭 Belum ada data tersimpan.</td></tr>';
-                return;
-            }
-
-            dataFilter.forEach((item, i) => {
-                let persenTeks = item.persen || "";
-                if(persenTeks && !persenTeks.includes('%') && !isNaN(persenTeks)) persenTeks = persenTeks + '%';
-
-                const kolomAksi = adalahAdmin ? `
-                    <td class="px-4 py-2 text-center">
-                        <button class="bg-amber-500 text-white px-2 py-1 rounded text-xs" onclick="editData(${i})">Ubah</button>
-                        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs ml-1" onclick="hapusData(${i})">Hapus</button>
-                    </td>` : `<td class="px-4 py-2 text-center">-</td>`;
-
-                isi.innerHTML += `
-                    <tr class="hover:bg-netral transition-colors">
-                        <td class="px-4 py-2">${i+1}</td>
-                        <td class="px-4 py-2">${item.tanggal}</td>
-                        <td class="px-4 py-2">${item.waktu}</td>
-                        <td class="px-4 py-2">${item.pekerja}</td>
-                        <td class="px-4 py-2">${item.mesin}</td>
-                        <td class="px-4 py-2">${item.namaFile}</td>
-                        <td class="px-4 py-2">${item.stitch}</td>
-                        <td class="px-4 py-2 font-medium text-blue-700">${persenTeks}</td>
-                        <td class="px-4 py-2">${item.jumlah}</td>
-                        <td class="px-4 py-2">${item.pemesan}</td>
-                        ${kolomAksi}
-                    </tr>`;
-            });
-        }
-
-        // FUNGSI UNDUH FILE
-        function unduhExcel(){
-            if(dataFilter.length === 0) return alert("⚠️ Tidak ada data.");
-            const dataUntukUnduh = dataFilter.map((item, i) => ({
-                "No":i+1,"Tanggal":item.tanggal,"Waktu":item.waktu,"Pekerja":item.pekerja,"Mesin":item.mesin,
-                "Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan
-            }));
-            const nama = `Laporan_Semua_Data`;
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUntukUnduh), "Data");
-            XLSX.writeFile(wb, nama + ".xlsx");
-        }
-        function unduhCSV(){
-            if(dataFilter.length === 0) return;
-            const dataUntukUnduh = dataFilter.map((item, i) => ({"No":i+1,"Tanggal":item.tanggal,"Waktu":item.waktu,"Pekerja":item.pekerja,"Mesin":item.mesin,"Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan}));
-            const nama = `Laporan_Semua_Data`;
-            const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(dataUntukUnduh));
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-            a.download = nama + ".csv"; a.click();
-        }
-
-        // FUNGSI UBAH & HAPUS (KHUSUS ADMIN)
-        async function editData(index) {
-            if(!adalahAdmin) return;
-            const item = dataFilter[index];
-            const baru = { 
-                tanggal:prompt('Tanggal:',item.tanggal),waktu:prompt('Waktu:',item.waktu),
-                pekerja:prompt('Pekerja:',item.pekerja),mesin:prompt('Mesin:',item.mesin),
-                namaFile:prompt('Nama File:',item.namaFile),stitch:prompt('Stitch:',item.stitch),
-                persen:prompt('Persen:',item.persen),jumlah:prompt('Jumlah:',item.jumlah),pemesan:prompt('Pemesan:',item.pemesan)
-            };
-            if(!baru.pekerja) return;
-            await fetch(URL_API + `?fungsi=ubahBaris&indeks=${semuaData.indexOf(dataFilter[index])}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
-            ambilData();
-        }
-        async function hapusData(index) {
-            if(!adalahAdmin || !confirm('Yakin hapus data ini?')) return;
-            await fetch(URL_API + `?fungsi=hapusBaris&indeks=${semuaData.indexOf(dataFilter[index])}`, {method:'POST'});
-            ambilData();
-        }
-
-        // JALANKAN SAAT DIBUKA
-        window.onload = function() {
-            if(adalahAdmin) { 
-                document.getElementById('kolomAksi').classList.remove('hidden'); 
-                document.getElementById('panelAdmin').classList.remove('hidden'); 
-            }
-            ambilData();
-        };
-    </script>
-</body>
-</html>
 
         // AMBIL SEMUA DATA
         async function ambilData() {
-            const res = await fetch(URL_API + '?aksi=ambil_semua');
-            semuaData = await res.json();
-            prosesFilter(); // Langsung tampilkan bulan ini
-        }
-
-        // ✅ LOGIKA FILTER TANGGAL - SUDAH DIPERBAIKI 100%
-        function prosesFilter() {
-            let blnPilih = document.getElementById('pilihBulan').value; 
-            let thnPilih = document.getElementById('pilihTahun').value; 
-
-            // Format Tanggal: "24/5/2026" -> Dipotong jadi [tanggal, bulan, tahun]
-            dataFilter = semuaData.filter(baris => {
-                if(!baris.tanggal) return false; // Lewati jika kosong
-                let bagianTgl = baris.tanggal.split("/"); 
-                let blnData = bagianTgl[1];
-                let thnData = bagianTgl[2];
-                return blnData === blnPilih && thnData === thnPilih;
-            });
-
-            tampilkanKeTabel();
+            try {
+                const res = await fetch(URL_API);
+                DATA = await res.json();
+                tampilkan();
+            } catch (err) {
+                console.error(err);
+                isiTabel.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-red-500">❌ Gagal memuat data</td></tr>`;
+            }
         }
 
         // TAMPILKAN KE TABEL
-        function tampilkanKeTabel() {
+        function tampilkan() {
             const isi = document.getElementById('isiTabel');
             isi.innerHTML = '';
-            if(dataFilter.length === 0) {
-                isi.innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">❌ Tidak ada data pada periode ini.</td></tr>';
+
+            if(DATA.length === 0) {
+                isi.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-gray-500">📭 Belum ada data tersimpan</td></tr>`;
                 return;
             }
 
-            dataFilter.forEach((item, i) => {
-                let persenTeks = item.persen;
-                if(typeof persenTeks === 'number') persenTeks = Math.round(persenTeks * 100) + '%';
-                if(persenTeks && !persenTeks.toString().includes('%')) persenTeks = persenTeks + '%';
+            DATA.forEach((item, i) => {
+                let persen = item.persen || "";
+                if(persen && !persen.includes('%')) persen = persen + '%';
 
-                const kolomAksi = adalahAdmin ? `
-                    <td class="px-4 py-2 text-center">
-                        <button class="bg-amber-500 text-white px-2 py-1 rounded text-xs hover:bg-amber-600" onclick="editData(${i})">Ubah</button>
-                        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 ml-1" onclick="hapusData(${i})">Hapus</button>
-                    </td>` : `<td class="px-4 py-2 text-center">-</td>`;
+                const aksi = IS_ADMIN ? `
+                <td class="p-1 text-center">
+                    <button class="bg-yellow-500 text-white px-1 text-xs rounded" onclick="edit(${i})">Ubah</button>
+                    <button class="bg-red-500 text-white px-1 text-xs rounded" onclick="hapus(${i})">Hapus</button>
+                </td>` : `<td class="p-1 text-center">-</td>`;
 
                 isi.innerHTML += `
-                    <tr class="hover:bg-netral transition-colors">
-                        <td class="px-4 py-2">${i+1}</td>
-                        <td class="px-4 py-2">${item.tanggal}</td>
-                        <td class="px-4 py-2">${item.waktu}</td>
-                        <td class="px-4 py-2">${item.pekerja}</td>
-                        <td class="px-4 py-2">${item.mesin}</td>
-                        <td class="px-4 py-2">${item.namaFile}</td>
-                        <td class="px-4 py-2">${item.stitch}</td>
-                        <td class="px-4 py-2 font-medium text-blue-700">${persenTeks}</td>
-                        <td class="px-4 py-2">${item.jumlah}</td>
-                        <td class="px-4 py-2">${item.pemesan}</td>
-                        ${kolomAksi}
-                    </tr>`;
+                <tr class="hover:bg-gray-50">
+                    <td class="p-1 text-center">${i+1}</td>
+                    <td class="p-1">${formatTanggal(item.tanggal)}</td>
+                    <td class="p-1">${formatWaktu(item.waktu)}</td>
+                    <td class="p-1">${item.pekerja || "-"}</td>
+                    <td class="p-1">${item.mesin || "-"}</td>
+                    <td class="p-1">${item.namaFile || "-"}</td>
+                    <td class="p-1 text-right">${item.stitch || "-"}</td>
+                    <td class="p-1 text-center font-bold text-blue-600">${persen}</td>
+                    <td class="p-1 text-right">${item.jumlah || "-"}</td>
+                    <td class="p-1">${item.pemesan || "-"}</td>
+                    ${aksi}
+                </tr>`;
             });
         }
 
-        // FUNGSI DOWNLOAD
-        function unduhExcel(){
-            if(dataFilter.length === 0) return alert("⚠️ Tidak ada data.");
-            const dataUntukUnduh = dataFilter.map((item, i) => {
-                let persen = item.persen;
-                if(typeof persen === 'number') persen = Math.round(persen * 100) + '%';
-                return {
-                    "No":i+1,"Tanggal":item.tanggal,"Waktu":item.waktu,"Pekerja":item.pekerja,"Mesin":item.mesin,
-                    "Nama File":item.namaFile,"Stitch":item.stitch,"Persen":persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan
-                };
-            });
-            const nama = `Laporan_${document.getElementById('pilihBulan').value}_${document.getElementById('pilihTahun').value}`;
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUntukUnduh), "Data");
-            XLSX.writeFile(wb, nama + ".xlsx");
-        }
-        function unduhCSV(){
-            if(dataFilter.length === 0) return;
-            const dataUntukUnduh = dataFilter.map((item, i) => { let p=item.persen;if(typeof p==='number')p=Math.round(p*100)+'%';return {"No":i+1,"Tanggal":item.tanggal,"Waktu":item.waktu,"Pekerja":item.pekerja,"Mesin":item.mesin,"Nama File":item.namaFile,"Stitch":item.stitch,"Persen":p,"Jumlah":item.jumlah,"Pemesan":item.pemesan}; });
-            const nama = `Laporan_${document.getElementById('pilihBulan').value}_${document.getElementById('pilihTahun').value}`;
-            const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(dataUntukUnduh));
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-            a.download = nama + ".csv"; a.click();
-        }
-
-        // EDIT & HAPUS
-        async function editData(index) {
-            if(!adalahAdmin) return;
-            let p = dataFilter[index].persen;
-            if(typeof p === 'number') p = Math.round(p*100)+'%';
-            const baru = { 
-                tanggal:prompt('Tanggal:',dataFilter[index].tanggal),waktu:prompt('Waktu:',dataFilter[index].waktu),
-                pekerja:prompt('Pekerja:',dataFilter[index].pekerja),mesin:prompt('Mesin:',dataFilter[index].mesin),
-                namaFile:prompt('Nama File:',dataFilter[index].namaFile),stitch:prompt('Stitch:',dataFilter[index].stitch),
-                persen:prompt('Persen:',p),jumlah:prompt('Jumlah:',dataFilter[index].jumlah),pemesan:prompt('Pemesan:',dataFilter[index].pemesan)
+        // FITUR ADMIN
+        async function edit(i) {
+            const brg = DATA[i];
+            const baru = {
+                tanggal: prompt('Tanggal:', brg.tanggal), waktu: prompt('Waktu:', brg.waktu),
+                pekerja: prompt('Pekerja:', brg.pekerja), mesin: prompt('Mesin:', brg.mesin),
+                namaFile: prompt('Nama File:', brg.namaFile), stitch: prompt('Stitch:', brg.stitch),
+                persen: prompt('Persen:', brg.persen), jumlah: prompt('Jumlah:', brg.jumlah),
+                pemesan: prompt('Pemesan:', brg.pemesan)
             };
             if(!baru.pekerja) return;
-            await fetch(URL_API + `?fungsi=ubahBaris&indeks=${semuaData.indexOf(dataFilter[index])}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
+            await fetch(`${URL_API}?aksi=ubah&indeks=${i}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
             ambilData();
         }
-        async function hapusData(index) {
-            if(!adalahAdmin || !confirm('Yakin hapus?')) return;
-            await fetch(URL_API + `?fungsi=hapusBaris&indeks=${semuaData.indexOf(dataFilter[index])}`, {method:'POST'});
+
+        async function hapus(i) {
+            if(!confirm('Yakin ingin menghapus?')) return;
+            await fetch(`${URL_API}?aksi=hapus&indeks=${i}`, {method:'POST'});
             ambilData();
+        }
+
+        // UNDUH EXCEL
+        function unduhExcel() {
+            const dataUnduh = DATA.map((x,i)=>({
+                "No":i+1,
+                "Tanggal": formatTanggal(x.tanggal),
+                "Waktu": formatWaktu(x.waktu),
+                "Pekerja": x.pekerja,
+                "Mesin": x.mesin,
+                "Nama File": x.namaFile,
+                "Stitch": x.stitch,
+                "Persen": x.persen,
+                "Jumlah": x.jumlah,
+                "Pemesan": x.pemesan
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUnduh), "Semua Data");
+            XLSX.writeFile(wb, "Laporan_Semua_Data.xlsx");
         }
 
         // MULAI
-        window.onload = function() {
-            if(adalahAdmin) { document.getElementById('kolomAksi').classList.remove('hidden'); document.getElementById('panelAdmin').classList.remove('hidden'); }
+        window.onload = ()=>{
+            if(IS_ADMIN) { 
+                document.getElementById('panelAdmin').classList.remove('hidden'); 
+                document.getElementById('kolomAksi').classList.remove('hidden'); 
+            }
             ambilData();
         };
     </script>
