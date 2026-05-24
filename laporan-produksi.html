@@ -59,7 +59,7 @@
                         <option value="12">Desember</option>
                     </select>
                     <select id="pilihTahun" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"></select>
-                    <button onclick="tampilkanLaporan(false)" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-primary transition font-medium">Tampilkan</button>
+                    <button onclick="tampilkanLaporan()" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-primary transition font-medium">Tampilkan</button>
 
                     <div class="relative group">
                         <button class="bg-gradient-to-b from-secondary to-primary text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-2 font-medium">
@@ -104,11 +104,12 @@
     <script>
         const URL_API = "https://script.google.com/macros/s/AKfycbyWx0QdsjXc_QfIqtjXwMoR-51Orgw8Xgez3YJK84Pc5wM8pfzLEwc0ChE--iBY8Wot/exec";
         const adalahAdmin = localStorage.getItem('isLogin') === 'true';
-        let dataGlobal = [];
+        let semuaDataAsli = []; // ✅ Simpan SEMUA data asli di memori
+        let dataTerfilter = []; // ✅ Data yang sudah disaring
 
         function logout() { localStorage.removeItem('isLogin'); alert('Keluar berhasil.'); location.reload(); }
 
-        // Fungsi isi pilihan Tahun
+        // Isi pilihan Tahun dan set default ke Bulan INI
         function isiTahun(){
             let thnSekarang = new Date().getFullYear();
             let el = document.getElementById('pilihTahun');
@@ -118,46 +119,61 @@
                 o.textContent=i; 
                 el.appendChild(o);
             }
-            // ✅ SET DEFAULT: Pilih Bulan & Tahun SAAT INI otomatis
+            // ✅ SET DEFAULT: Bulan & Tahun Sekarang
             const sekarang = new Date();
             document.getElementById('pilihBulan').value = sekarang.getMonth() + 1;
             document.getElementById('pilihTahun').value = sekarang.getFullYear();
         }
 
-        // ✅ FUNGSI UTAMA FILTER DIPERBAIKI
-        async function tampilkanLaporan(dariDefault = false) {
-            let bln, thn;
-
-            // Jika dipanggil pertama kali, ambil tanggal sistem
-            if(dariDefault){
-                const sekarang = new Date();
-                bln = sekarang.getMonth() + 1;
-                thn = sekarang.getFullYear();
-                // Masukkan ke pilihan agar sesuai tampilan
-                document.getElementById('pilihBulan').value = bln;
-                document.getElementById('pilihTahun').value = thn;
-            } else {
-                // Jika diklik tombol tampilkan, ambil dari pilihan user
-                bln = parseInt(document.getElementById('pilihBulan').value);
-                thn = parseInt(document.getElementById('pilihTahun').value);
+        // ✅ FUNGSI PENTING: UBAH TEKS TANGGAL -> OBJEK TANGGAL
+        function ubahTeksKeTanggal(teksTanggal) {
+            try {
+                // Format di Sheet: "24/5/2026 12:02:34" -> kita ambil bagian tanggalnya saja
+                let bagian = teksTanggal.split(" ")[0].split("/"); // [tanggal, bulan, tahun]
+                if(bagian.length === 3){
+                    // new Date(tahun, bulan-1, tanggal)
+                    return new Date(bagian[2], bagian[1]-1, bagian[0]);
+                }
+                return null;
+            } catch(e) {
+                return null;
             }
+        }
 
-            // Panggil API dengan parameter Bulan & Tahun
-            let url = `${URL_API}?bulan=${bln}&tahun=${thn}`; 
+        // ✅ AMBIL SEMUA DATA DARI SERVER SEKALI SAJA
+        async function ambilSemuaDataDariServer() {
+            const res = await fetch(URL_API + '?bulan_ini=1'); // Panggil ambil semua
+            semuaDataAsli = await res.json();
             
-            const res = await fetch(url);
-            dataGlobal = await res.json();
+            // Setelah data diterima, langsung tampilkan filter bulan ini
+            tampilkanLaporan();
+        }
+
+        // ✅ FUNGSI FILTER YANG BERFUNGSI 100%
+        function tampilkanLaporan() {
+            const blnPilih = parseInt(document.getElementById('pilihBulan').value);
+            const thnPilih = parseInt(document.getElementById('pilihTahun').value);
+
+            // PROSES PENYARINGAN: Cek satu per satu data
+            dataTerfilter = semuaDataAsli.filter(item => {
+                let tglObj = ubahTeksKeTanggal(item.tanggal);
+                if(!tglObj) return false; // Lewati jika tanggal salah format
+                
+                // Cocokkan Bulan & Tahun
+                return (tglObj.getMonth() + 1 === blnPilih) && (tglObj.getFullYear() === thnPilih);
+            });
 
             const isi = document.getElementById('isiTabel');
             isi.innerHTML = '';
             
-            if(dataGlobal.length === 0) { 
+            if(dataTerfilter.length === 0) { 
                 isi.innerHTML = '<tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">❌ Tidak ada data pada periode ini.</td></tr>'; 
                 return; 
             }
             
-            dataGlobal.forEach((item, i) => {
-                // ✅ Tampilkan persen SESUAI ASLI INPUT (100%, 70%, dll)
+            // TAMPILKAN DATA YANG SUDAH DIFILTER
+            dataTerfilter.forEach((item, i) => {
+                // ✅ Tampilkan persen SESUAI ASLI INPUT
                 let tampilPersen = item.persen;
                 if(typeof tampilPersen === 'number'){
                     tampilPersen = Math.round(tampilPersen * 100) + '%';
@@ -190,11 +206,11 @@
             });
         }
 
-        // ✅ FUNGSI DOWNLOAD BERFUNGSI & FORMAT PERSEN BENAR
+        // ✅ DOWNLOAD: Menggunakan data yang sedang difilter saja
         function unduhExcel(){
-            if(dataGlobal.length === 0) return alert("⚠️ Tidak ada data untuk diunduh.");
+            if(dataTerfilter.length === 0) return alert("⚠️ Tidak ada data untuk diunduh.");
             
-            const dataUntukUnduh = dataGlobal.map((item, i) => {
+            const dataUntukUnduh = dataTerfilter.map((item, i) => {
                 let nilaiPersen = item.persen;
                 if(typeof nilaiPersen === 'number') nilaiPersen = Math.round(nilaiPersen * 100) + '%';
                 if(nilaiPersen && !nilaiPersen.toString().includes('%')) nilaiPersen = nilaiPersen + '%';
@@ -220,9 +236,9 @@
         }
 
         function unduhCSV(){
-            if(dataGlobal.length === 0) return alert("⚠️ Tidak ada data untuk diunduh.");
+            if(dataTerfilter.length === 0) return alert("⚠️ Tidak ada data untuk diunduh.");
             
-            const dataUntukUnduh = dataGlobal.map((item, i) => {
+            const dataUntukUnduh = dataTerfilter.map((item, i) => {
                 let nilaiPersen = item.persen;
                 if(typeof nilaiPersen === 'number') nilaiPersen = Math.round(nilaiPersen * 100) + '%';
                 if(nilaiPersen && !nilaiPersen.toString().includes('%')) nilaiPersen = nilaiPersen + '%';
@@ -254,37 +270,37 @@
 
         async function editData(index) {
             if(!adalahAdmin) return;
-            let nilaiAwalPersen = dataGlobal[index].persen;
+            let nilaiAwalPersen = dataTerfilter[index].persen;
             if(typeof nilaiAwalPersen === 'number') nilaiAwalPersen = Math.round(nilaiAwalPersen * 100) + '%';
             
             const baru = { 
-                pekerja: prompt('Nama Pekerja:', dataGlobal[index].pekerja), 
-                mesin: prompt('Nama Mesin:', dataGlobal[index].mesin), 
-                namaFile: prompt('Nama File:', dataGlobal[index].namaFile),
-                stitch: prompt('Jumlah Stitch:', dataGlobal[index].stitch), 
+                pekerja: prompt('Nama Pekerja:', dataTerfilter[index].pekerja), 
+                mesin: prompt('Nama Mesin:', dataTerfilter[index].mesin), 
+                namaFile: prompt('Nama File:', dataTerfilter[index].namaFile),
+                stitch: prompt('Jumlah Stitch:', dataTerfilter[index].stitch), 
                 persen: prompt('Persentase:', nilaiAwalPersen), 
-                jumlah: prompt('Jumlah:', dataGlobal[index].jumlah), 
-                pemesan: prompt('Nama Pemesan:', dataGlobal[index].pemesan) 
+                jumlah: prompt('Jumlah:', dataTerfilter[index].jumlah), 
+                pemesan: prompt('Nama Pemesan:', dataTerfilter[index].pemesan) 
             };
             if(!baru.pekerja) return;
-            await fetch(URL_API + `?fungsi=ubahBaris&indeks=${index}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
-            tampilkanLaporan();
+            await fetch(URL_API + `?fungsi=ubahBaris&indeks=${semuaDataAsli.indexOf(dataTerfilter[index])}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
+            ambilSemuaDataDariServer(); // Muat ulang data setelah ubah
         }
         
         async function hapusData(index) {
             if(!adalahAdmin || !confirm('⚠️ Yakin ingin menghapus data ini?')) return;
-            await fetch(URL_API + `?fungsi=hapusBaris&indeks=${index}`, {method:'POST'});
-            tampilkanLaporan();
+            await fetch(URL_API + `?fungsi=hapusBaris&indeks=${semuaDataAsli.indexOf(dataTerfilter[index])}`, {method:'POST'});
+            ambilSemuaDataDariServer(); // Muat ulang data setelah hapus
         }
 
-        // ✅ SAAT HALAMAN DIBUKA: Langsung tampilkan BULAN INI
+        // ✅ SAAT HALAMAN DIBUKA
         window.onload = function() {
             if(adalahAdmin) {
                 document.getElementById('kolomAksi').classList.remove('hidden');
                 document.getElementById('panelAdmin').classList.remove('hidden');
             }
-            isiTahun();          // Isi pilihan tahun dan set bulan ini
-            tampilkanLaporan(true); // Panggil data bulan ini otomatis
+            isiTahun();                // Siapkan pilihan bulan/tahun
+            ambilSemuaDataDariServer();// Ambil data & tampilkan bulan ini otomatis
         };
     </script>
 </body>
