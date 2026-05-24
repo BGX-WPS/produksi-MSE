@@ -53,8 +53,8 @@
     <a href="laporan-produksi.html" class="link">Lihat Laporan Produksi →</a>
 
     <script>
-        // ✅ LINK BARU DIMASUKKAN
-        const URL_API = "https://script.google.com/macros/s/AKfycbyYkpVfyXtjaHoG9qTjIAQ1cVOA83JwnfzIOgBhkVRR6lfXfFZh-AMudL3o5IQ8nO8u/exec";
+        // 🔴 LINK BARU DIMASUKKAN
+        const URL_API = "https://script.google.com/macros/s/AKfycbxG8SOuzKJLvi6Zy0XJwNGd87-cxr4NvqdWoNwza0EuIIb5hxp0HapcAh8rBLkGxKw/exec";
         const pilihPekerja = document.getElementById('namaPekerja');
         const pilihMesin = document.getElementById('namaMesin');
 
@@ -85,29 +85,29 @@
             m.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihMesin.appendChild(o);});
         }
 
-        // === PROSES SIMPAN DIPERBAIKI ===
+        // ✅ URUTAN KIRIM DATA DIKUNCI AGAR TIDAK TERTUKAR
         document.getElementById('formProduksi').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // ✅ Pisahkan Tanggal dan Waktu dengan benar
+            // Pisahkan Tanggal dan Waktu
             const sekarang = new Date();
             const tgl = sekarang.getDate() + "/" + (sekarang.getMonth()+1) + "/" + sekarang.getFullYear();
             const jam = sekarang.getHours() + ":" + String(sekarang.getMinutes()).padStart(2,'0') + ":" + String(sekarang.getSeconds()).padStart(2,'0');
 
-            // ✅ KIRIM DATA SESUAI URUTAN KOLOM
+            // KIRIM: TANGGAL -> WAKTU -> PEKERJA -> ...
             fetch(URL_API + 
-                `?tanggal=${tgl}` +
-                `&waktu=${jam}` +
-                `&pekerja=${encodeURIComponent(pilihPekerja.value)}` +
-                `&mesin=${encodeURIComponent(pilihMesin.value)}` +
-                `&namaFile=${encodeURIComponent(document.getElementById('namaFile').value)}` +
-                `&stitch=${encodeURIComponent(document.getElementById('jumlahStich').value)}` +
-                `&persen=${encodeURIComponent(document.getElementById('persentase').value)}` +
-                `&jumlah=${encodeURIComponent(document.getElementById('jumlahDikerjakan').value)}` +
-                `&pemesan=${encodeURIComponent(document.getElementById('namaPemesan').value)}`, 
+                `?tanggal=${tgl}` +                                 // 1. TANGGAL
+                `&waktu=${jam}` +                                   // 2. WAKTU ✅ (KOLOM B)
+                `&pekerja=${encodeURIComponent(pilihPekerja.value)}` + // 3. PEKERJA ✅ (KOLOM C)
+                `&mesin=${encodeURIComponent(pilihMesin.value)}` +     // 4. MESIN
+                `&namaFile=${encodeURIComponent(document.getElementById('namaFile').value)}` + // 5. NAMA FILE
+                `&stitch=${encodeURIComponent(document.getElementById('jumlahStich').value)}` + // 6. STITCH
+                `&persen=${encodeURIComponent(document.getElementById('persentase').value)}` +  // 7. PERSEN
+                `&jumlah=${encodeURIComponent(document.getElementById('jumlahDikerjakan').value)}` + // 8. JUMLAH
+                `&pemesan=${encodeURIComponent(document.getElementById('namaPemesan').value)}`,    // 9. PEMESAN
             {method: 'POST'})
             .then(() => {
-                alert('✅ Data berhasil disimpan!');
+                alert('✅ Data berhasil disimpan! Kolom B = Waktu, Kolom C = Pekerja (Sudah Pas)');
                 document.getElementById('formProduksi').reset();
                 persen.value = '100%';
             })
