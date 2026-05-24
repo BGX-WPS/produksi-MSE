@@ -31,7 +31,7 @@
         <div class="card">
             <h2>Kelola Nama Pekerja</h2>
             <div class="input-group">
-                <input type="text" id="namaPekerjaBaru" placeholder="Nama...">
+                <input type="text" id="namaPekerjaBaru" placeholder="Masukkan Nama...">
                 <button class="btn-biru" onclick="tambah('pekerja')">Tambah</button>
             </div>
             <div id="daftarPekerja"></div>
@@ -40,7 +40,7 @@
         <div class="card">
             <h2>Kelola Nama Mesin</h2>
             <div class="input-group">
-                <input type="text" id="namaMesinBaru" placeholder="Nama...">
+                <input type="text" id="namaMesinBaru" placeholder="Masukkan Nama...">
                 <button class="btn-biru" onclick="tambah('mesin')">Tambah</button>
             </div>
             <div id="daftarMesin"></div>
@@ -48,22 +48,32 @@
     </div>
 
     <script>
-        // 🔴 LINK BARU DIMASUKKAN
-        const URL_API = "https://script.google.com/macros/s/AKfycbxG8SOuzKJLvi6Zy0XJwNGd87-cxr4NvqdWoNwza0EuIIb5hxp0HapcAh8rBLkGxKw/exec";
-        if(localStorage.getItem('isLogin') !== 'true') { alert('Akses ditolak!'); window.location.href = 'login.html'; }
+        // ✅ LINK SUDAH DIMASUKKAN
+        const URL_API = "https://script.google.com/macros/s/AKfycbxVtCwAYyxg9j-pw2Tny1V2hNfCxK8TO9kYDmLoR89oK_04ohX6ixLHQksMyvPVFD4l/exec";
+
+        // CEK AKSES
+        if(localStorage.getItem('isLogin') !== 'true') { alert('Akses ditolak! Harap Login Dulu.'); window.location.href = 'login.html'; }
         function logout() { localStorage.removeItem('isLogin'); location.reload(); }
 
+        // FUNGSI AMBIL DATA
         async function ambilDaftar(jenis) { return await fetch(URL_API + '?aksi=daftar_' + jenis).then(r=>r.json()); }
+        
+        // FUNGSI TAMBAH
         async function tambah(jenis){
             const nama = (jenis==='pekerja') ? document.getElementById('namaPekerjaBaru').value : document.getElementById('namaMesinBaru').value;
-            if(!nama.trim()) return;
+            if(!nama.trim()) return alert("Nama tidak boleh kosong!");
             await fetch(URL_API + `?aksi=kelola_${jenis}&metode=tambah&nama=${nama}`, {method:'POST'});
             muatSemua();
             (jenis==='pekerja') ? document.getElementById('namaPekerjaBaru').value='' : document.getElementById('namaMesinBaru').value='';
         }
-        async function hapus(jenis,idx){ await fetch(URL_API + `?aksi=kelola_${jenis}&metode=hapus&idx=${idx}`, {method:'POST'}); muatSemua(); }
-        async function ubah(jenis,idx,lama){ const b=prompt('Ubah nama:',lama);if(b){await fetch(URL_API + `?aksi=kelola_${jenis}&metode=ubah&idx=${idx}&namaBaru=${b}`, {method:'POST'}); muatSemua();} }
         
+        // FUNGSI HAPUS
+        async function hapus(jenis,idx){ if(confirm("Yakin hapus?")) { await fetch(URL_API + `?aksi=kelola_${jenis}&metode=hapus&idx=${idx}`, {method:'POST'}); muatSemua(); } }
+        
+        // FUNGSI UBAH
+        async function ubah(jenis,idx,lama){ const baru=prompt('Ubah nama:',lama);if(baru && baru.trim()){await fetch(URL_API + `?aksi=kelola_${jenis}&metode=ubah&idx=${idx}&namaBaru=${baru}`, {method:'POST'}); muatSemua();} }
+        
+        // TAMPILKAN KE LAYAR
         async function muatSemua(){
             const p = await ambilDaftar('pekerja');
             const m = await ambilDaftar('mesin');
@@ -72,6 +82,7 @@
             p.forEach((n,i)=>ep.innerHTML+=`<div class="list-item"><span>${n}</span><div><button class="btn-kuning" onclick="ubah('pekerja',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('pekerja',${i})">Hapus</button></div></div>`);
             m.forEach((n,i)=>em.innerHTML+=`<div class="list-item"><span>${n}</span><div><button class="btn-kuning" onclick="ubah('mesin',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('mesin',${i})">Hapus</button></div></div>`);
         }
+
         muatSemua();
     </script>
 </body>
