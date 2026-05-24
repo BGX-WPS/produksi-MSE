@@ -215,6 +215,131 @@
     </script>
 </body>
 </html>
+                    // Ini kolom TANGGAL
+                    return tanggal.toLocaleDateString('id-ID', {day:'2-digit', month:'2-digit', year:'numeric'});
+                }
+            }
+            return teks;
+        }
+
+        // AMBIL DATA
+        async function ambilData() {
+            document.getElementById('isiTabel').innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">🔄 Memuat data...</td></tr>';
+            try {
+                const res = await fetch(URL_API);
+                if (!res.ok) throw new Error("Gagal terhubung ke server");
+
+                const hasil = await res.json();
+                console.log("Data diterima:", hasil);
+
+                if (Array.isArray(hasil)) {
+                    semuaData = hasil;
+                } else {
+                    throw new Error("Format data tidak dikenali");
+                }
+
+                tampilkanKeTabel();
+
+            } catch (err) {
+                console.error("Error:", err);
+                document.getElementById('isiTabel').innerHTML = `
+                <tr>
+                    <td colspan="11" class="px-4 py-6 text-center text-red-500">
+                        ❌ Gagal memuat data<br>
+                        <b>Pesan:</b> ${err.message}
+                    </td>
+                </tr>`;
+            }
+        }
+
+        // TAMPILKAN KE TABEL
+        function tampilkanKeTabel() {
+            const isi = document.getElementById('isiTabel');
+            isi.innerHTML = '';
+
+            if(semuaData.length === 0) {
+                isi.innerHTML = '<tr><td colspan="11" class="px-4 py-6 text-center text-gray-500">📭 Belum ada data tersimpan.</td></tr>';
+                return;
+            }
+
+            semuaData.forEach((item, i) => {
+                let persenTeks = item.persen || "";
+                if(persenTeks && !persenTeks.includes('%') && !isNaN(persenTeks)) persenTeks = persenTeks + '%';
+
+                const kolomAksi = adalahAdmin ? `
+                    <td class="px-4 py-2 text-center">
+                        <button class="bg-amber-500 text-white px-2 py-1 rounded text-xs" onclick="editData(${i})">Ubah</button>
+                        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs ml-1" onclick="hapusData(${i})">Hapus</button>
+                    </td>` : `<td class="px-4 py-2 text-center">-</td>`;
+
+                isi.innerHTML += `
+                    <tr class="hover:bg-netral transition-colors">
+                        <td class="px-4 py-2">${i+1}</td>
+                        <td class="px-4 py-2">${ubahFormatWaktu(item.tanggal)}</td>
+                        <td class="px-4 py-2">${ubahFormatWaktu(item.waktu)}</td>
+                        <td class="px-4 py-2">${item.pekerja || '-'}</td>
+                        <td class="px-4 py-2">${item.mesin || '-'}</td>
+                        <td class="px-4 py-2">${item.namaFile || '-'}</td>
+                        <td class="px-4 py-2">${item.stitch || '-'}</td>
+                        <td class="px-4 py-2 font-medium text-blue-700">${persenTeks}</td>
+                        <td class="px-4 py-2">${item.jumlah || '-'}</td>
+                        <td class="px-4 py-2">${item.pemesan || '-'}</td>
+                        ${kolomAksi}
+                    </tr>`;
+            });
+        }
+
+        // UNDUH
+        function unduhExcel(){
+            if(semuaData.length === 0) return alert("⚠️ Tidak ada data.");
+            const dataUntukUnduh = semuaData.map((item, i) => ({
+                "No":i+1,"Tanggal":ubahFormatWaktu(item.tanggal),"Waktu":ubahFormatWaktu(item.waktu),"Pekerja":item.pekerja,"Mesin":item.mesin,
+                "Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUntukUnduh), "Data");
+            XLSX.writeFile(wb, `Laporan_Semua_Data.xlsx`);
+        }
+        function unduhCSV(){
+            if(semuaData.length === 0) return;
+            const dataUntukUnduh = semuaData.map((item, i) => ({"No":i+1,"Tanggal":ubahFormatWaktu(item.tanggal),"Waktu":ubahFormatWaktu(item.waktu),"Pekerja":item.pekerja,"Mesin":item.mesin,"Nama File":item.namaFile,"Stitch":item.stitch,"Persen":item.persen,"Jumlah":item.jumlah,"Pemesan":item.pemesan}));
+            const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(dataUntukUnduh));
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+            a.download = `Laporan_Semua_Data.csv`; a.click();
+        }
+
+        // EDIT & HAPUS
+        async function editData(index) {
+            if(!adalahAdmin) return;
+            const item = semuaData[index];
+            const baru = { 
+                tanggal:prompt('Tanggal:',item.tanggal),waktu:prompt('Waktu:',item.waktu),
+                pekerja:prompt('Pekerja:',item.pekerja),mesin:prompt('Mesin:',item.mesin),
+                namaFile:prompt('Nama File:',item.namaFile),stitch:prompt('Stitch:',item.stitch),
+                persen:prompt('Persen:',item.persen),jumlah:prompt('Jumlah:',item.jumlah),pemesan:prompt('Pemesan:',item.pemesan)
+            };
+            if(!baru.pekerja) return;
+            await fetch(`${URL_API}?aksi=ubah&indeks=${index}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
+            ambilData();
+        }
+        async function hapusData(index) {
+            if(!adalahAdmin || !confirm('Yakin hapus?')) return;
+            await fetch(`${URL_API}?aksi=hapus&indeks=${index}`, {method:'POST'});
+            ambilData();
+        }
+
+        // MULAI
+        window.onload = function() {
+            if(adalahAdmin) { 
+                document.getElementById('kolomAksi').classList.remove('hidden'); 
+                document.getElementById('panelAdmin').classList.remove('hidden'); 
+            }
+            ambilData();
+        };
+    </script>
+</body>
+</html>
                     document.getElementById('isiTabel').innerHTML = `<tr><td colspan="11" class="px-4 py-6 text-center text-red-500">❌ Error: ${hasil.pesan}</td></tr>`;
                     semuaData = [];
                 } else {
