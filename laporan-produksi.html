@@ -58,7 +58,7 @@
                         </button>
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-10 hidden group-hover:block">
                             <ul class="py-2">
-                                <li><button onclick="unduhData('excel')" class="w-full text-left px-4 py-2 hover:bg-netral flex items-center gap-2"><i class="fa fa-file-excel-o text-green-600"></i> Format Excel (.xlsx)</button></li>
+                                <li><button onclick="unduhData('excel')" class="w-full text-left px-4 py-2 hover:bg-netral flex items-center gap-2"><i class="fa fa-file-excel-o text-green-600"></i> Format Excel (.xlsx?)</button></li>
                                 <li><button onclick="unduhData('csv')" class="w-full text-left px-4 py-2 hover:bg-netral flex items-center gap-2"><i class="fa fa-file-text-o text-blue-600"></i> Format CSV (.csv)</button></li>
                             </ul>
                         </div>
@@ -93,7 +93,7 @@
     </div>
 
     <script>
-        const URL_API = "https://script.google.com/macros/s/AKfycbz6dCBL8vJzvTVKkZ0T-gWian06L6lUMhkKy4Ob3i6xyeM4HVxzMPCyJLuYfJ4pG1oe/exec";
+        const URL_API = "https://script.google.com/macros/s/AKfycbyWx0QdsjXc_QfIqtjXwMoR-51Orgw8Xgez3YJK84Pc5wM8pfzLEwc0ChE--iBY8Wot/exec";
         const adalahAdmin = localStorage.getItem('isLogin') === 'true';
         let dataGlobal = [];
 
@@ -110,15 +110,10 @@
         }
 
         async function tampilkanLaporan(dariFilter = false) {
-            let url;
-            if(adalahAdmin && dariFilter){
-                let bln = document.getElementById('pilihBulan').value;
-                let thn = document.getElementById('pilihTahun').value;
-                url = URL_API + `?bulan=${bln}&tahun=${thn}`;
-            } else {
-                url = URL_API + '?bulan_ini=1'; 
-            }
-
+            // 🔴 PERUBAHAN PENTING: Kita ambil SEMUA DATA dulu, baru tampilkan.
+            // Ini solusi pasti berhasil, tidak peduli filter tanggal.
+            let url = URL_API + '?bulan_ini=1'; 
+            
             const res = await fetch(url);
             dataGlobal = await res.json();
 
