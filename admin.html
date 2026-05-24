@@ -3,45 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Admin</title>
+    <title>Panel Admin</title>
     <style>
         * {box-sizing: border-box; font-family: Arial, sans-serif; margin:0; padding:0;}
-        body {background: #f0f4f8; display:flex; align-items:center; justify-content:center; height:100vh;}
-        .box {background:white; padding:30px; border-radius:10px; width:100%; max-width:350px; box-shadow:0 3px 10px rgba(0,0,0,0.1);}
-        h2 {text-align:center; color:#005b96; margin-bottom:20px;}
-        .form-group {margin-bottom:15px;}
-        label {display:block; margin-bottom:5px; font-size:14px;}
-        input {width:100%; padding:10px; border:1px solid #ccc; border-radius:5px;}
-        button {width:100%; padding:10px; background:#0071bc; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;}
-        button:hover {background:#005b96;}
-        a {display:block; text-align:center; margin-top:15px; color:#0071bc; text-decoration:none;}
+        body {background: #f0f4f8; padding:20px;}
+        .container {max-width:600px; margin:0 auto;}
+        h1 {color:#005b96; text-align:center; margin-bottom:20px;}
+        .card {background:white; padding:15px; border-radius:8px; margin-bottom:15px; box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+        h2 {font-size:16px; margin-bottom:10px; color:#333;}
+        .input-group {display:flex; gap:5px; margin-bottom:10px;}
+        input {flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;}
+        button {padding:8px 12px; border:none; border-radius:4px; cursor:pointer;}
+        .btn-biru {background:#0071bc; color:white;}
+        .btn-kuning {background:#f59e0b; color:white;}
+        .btn-merah {background:#dc2626; color:white;}
+        .item {display:flex; justify-content:space-between; align-items:center; padding:6px; background:#f8fafc; border-radius:4px; margin-bottom:4px;}
     </style>
 </head>
 <body>
-    <div class="box">
-        <h2>🔑 LOGIN</h2>
-        <div class="form-group">
-            <label>Username</label>
-            <input type="text" id="user" value="admin" readonly>
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <a href="index.html" style="color:#0071bc; text-decoration:none;">← Kembali</a>
+            <button class="btn-merah" onclick="logout()">Logout</button>
         </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" id="pass" placeholder="Masukkan Sandi">
+        <h1>⚙️ KELOLA DATA</h1>
+
+        <div class="card">
+            <h2>Daftar Pekerja</h2>
+            <div class="input-group">
+                <input type="text" id="namaPekerja" placeholder="Nama baru...">
+                <button class="btn-biru" onclick="tambah('pekerja')">Tambah</button>
+            </div>
+            <div id="listPekerja"></div>
         </div>
-        <button onclick="cekLogin()">Masuk</button>
-        <a href="index.html">← Kembali</a>
+
+        <div class="card">
+            <h2>Daftar Mesin</h2>
+            <div class="input-group">
+                <input type="text" id="namaMesin" placeholder="Nama baru...">
+                <button class="btn-biru" onclick="tambah('mesin')">Tambah</button>
+            </div>
+            <div id="listMesin"></div>
+        </div>
     </div>
 
     <script>
-        const PASS_BENAR = "123456";
-        function cekLogin() {
-            if(document.getElementById('pass').value === PASS_BENAR) {
-                localStorage.setItem('isLogin', 'true');
-                window.location.href = "admin.html";
-            } else {
-                alert("Password salah!");
-            }
+        // ✅ LINK SUDAH DIPASANG
+        const URL_API = "https://script.google.com/macros/s/AKfycbyRFTGf51YWezOXbwp6FqaJ7Y9f7mN6iGn4OshnU6QbgO9fCT0s3wDU1cZvGI_t6LcM/exec";
+
+        if(localStorage.getItem('isLogin') !== 'true') { alert('Akses ditolak!'); location.href='login.html'; }
+        function logout() { localStorage.removeItem('isLogin'); location.reload(); }
+
+        async function ambil(jenis) { return await fetch(URL_API+'?aksi=daftar_'+jenis).then(r=>r.json()); }
+
+        async function tambah(jenis) {
+            const nama = jenis==='pekerja' ? namaPekerja.value : namaMesin.value;
+            if(!nama) return;
+            await fetch(`${URL_API}?aksi=kelola_${jenis}&metode=tambah&nama=${nama}`, {method:'POST'});
+            jenis==='pekerja' ? namaPekerja.value='' : namaMesin.value='';
+            muatSemua();
         }
+
+        async function hapus(jenis,idx) {
+            if(!confirm('Yakin hapus?')) return;
+            await fetch(`${URL_API}?aksi=kelola_${jenis}&metode=hapus&idx=${idx}`, {method:'POST'});
+            muatSemua();
+        }
+
+        async function ubah(jenis,idx,lama) {
+            const baru = prompt('Ubah nama:', lama);
+            if(!baru) return;
+            await fetch(`${URL_API}?aksi=kelola_${jenis}&metode=ubah&idx=${idx}&namaBaru=${baru}`, {method:'POST'});
+            muatSemua();
+        }
+
+        async function muatSemua() {
+            let p = await ambil('pekerja');
+            let m = await ambil('mesin');
+            listPekerja.innerHTML=''; listMesin.innerHTML='';
+            p.forEach((n,i)=>listPekerja.innerHTML+=`<div class="item">${n}<div><button class="btn-kuning" onclick="ubah('pekerja',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('pekerja',${i})">Hapus</button></div></div>`);
+            m.forEach((n,i)=>listMesin.innerHTML+=`<div class="item">${n}<div><button class="btn-kuning" onclick="ubah('mesin',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('mesin',${i})">Hapus</button></div></div>`);
+        }
+
+        muatSemua();
     </script>
 </body>
 </html>
