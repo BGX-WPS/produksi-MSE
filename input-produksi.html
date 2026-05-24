@@ -3,30 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input Data Produksi</title>
+    <title>Input Produksi</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
-        body { background-color: #f0f4f8; padding: 2rem; max-width: 600px; margin: 0 auto; }
-        h1 { color: #005b96; text-align: center; margin-bottom: 2rem; font-weight: 600; }
-        .form-group { margin-bottom: 1.2rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #334155; }
-        input, select { width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background-color: #fff; }
-        button { background-color: #0071bc; color: white; border: none; padding: 0.9rem 1.5rem; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; width: 100%; margin-top: 1rem; transition: background 0.3s; }
-        button:hover { background-color: #005b96; }
-        .link { display: inline-block; margin-top: 1.5rem; color: #0071bc; text-decoration: none; font-weight: 500; }
+        * {box-sizing: border-box; font-family: Arial, sans-serif; margin:0; padding:0;}
+        body {background: #f0f4f8; padding:20px; max-width:500px; margin:0 auto;}
+        h1 {color:#005b96; text-align:center; margin-bottom:20px;}
+        .form-group {margin-bottom:15px;}
+        label {display:block; margin-bottom:5px; font-weight:500;}
+        input, select {width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:15px;}
+        button {width:100%; padding:12px; background:#0071bc; color:white; border:none; border-radius:5px; font-size:16px; cursor:pointer;}
+        button:hover {background:#005b96;}
+        a {color:#0071bc; text-decoration:none; display:inline-block; margin-bottom:15px;}
     </style>
 </head>
 <body>
-    <a href="index.html" class="link">← Kembali ke Beranda</a>
+    <a href="index.html">← Kembali</a>
     <h1>Form Input Produksi</h1>
-    <form id="formProduksi">
+
+    <form id="form">
         <div class="form-group">
             <label>Nama Pekerja</label>
-            <select id="namaPekerja" required><option value="">-- Memuat Daftar...</option></select>
+            <select id="pekerja" required><option value="">-- Pilih --</option></select>
         </div>
         <div class="form-group">
             <label>Nama Mesin</label>
-            <select id="namaMesin" required><option value="">-- Memuat Daftar...</option></select>
+            <select id="mesin" required><option value="">-- Pilih --</option></select>
         </div>
         <div class="form-group">
             <label>Nama File / Desain</label>
@@ -34,90 +35,77 @@
         </div>
         <div class="form-group">
             <label>Jumlah Stitch</label>
-            <input type="text" id="jumlahStich" required placeholder="Contoh: 15.000">
+            <input type="text" id="stitch" required placeholder="1.000">
         </div>
         <div class="form-group">
             <label>Persentase</label>
-            <input type="text" id="persentase" value="100%" required>
+            <input type="text" id="persen" value="100%" required>
         </div>
         <div class="form-group">
             <label>Jumlah Dikerjakan</label>
-            <input type="number" id="jumlahDikerjakan" required>
+            <input type="number" id="jumlah" required>
         </div>
         <div class="form-group">
             <label>Nama Pemesan</label>
-            <input type="text" id="namaPemesan" required>
+            <input type="text" id="pemesan" required>
         </div>
+
         <button type="submit">✅ Simpan Data</button>
     </form>
-    <a href="laporan-produksi.html" class="link">Lihat Laporan Produksi →</a>
+    <a href="laporan-produksi.html" style="margin-top:15px; display:block;">Lihat Laporan →</a>
 
     <script>
-        // ✅ LINK SUDAH DIMASUKKAN
-        const URL_API = "https://script.google.com/macros/s/AKfycbxVtCwAYyxg9j-pw2Tny1V2hNfCxK8TO9kYDmLoR89oK_04ohX6ixLHQksMyvPVFD4l/exec";
-        
-        const pilihPekerja = document.getElementById('namaPekerja');
-        const pilihMesin = document.getElementById('namaMesin');
+        // ✅ LINK SUDAH DIPASANG
+        const URL_API = "https://script.google.com/macros/s/AKfycbyRFTGf51YWezOXbwp6FqaJ7Y9f7mN6iGn4OshnU6QbgO9fCT0s3wDU1cZvGI_t6LcM/exec";
 
-        // Format angka ribuan
-        function formatRibuan(angka) { return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
-        document.getElementById('jumlahStich').addEventListener('input', function(){
-            let nilai = this.value.replace(/\D/g,'');
-            this.value = nilai ? formatRibuan(nilai) : '';
+        // Format ribuan
+        document.getElementById('stitch').addEventListener('input', function(){
+            let val = this.value.replace(/\D/g,'');
+            this.value = val ? val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") : '';
         });
 
-        // Format Persen Otomatis
-        const persen = document.getElementById('persentase');
-        persen.addEventListener('focus', () => { persen.value = '%'; persen.selectionStart = 0; });
-        persen.addEventListener('input', () => {
-            let angka = persen.value.replace(/\D/g,'');
-            persen.value = angka ? angka + '%' : '%';
-            persen.selectionStart = persen.value.length - 1;
+        // Format persen
+        const p = document.getElementById('persen');
+        p.addEventListener('input', ()=>{
+            let val = p.value.replace(/\D/g,'');
+            p.value = val ? val + '%' : '%';
         });
-        persen.addEventListener('blur', () => { if(persen.value === '' || persen.value === '%') persen.value = '100%'; });
+        p.addEventListener('blur', ()=>{if(!p.value || p.value==='%') p.value='100%'});
 
-        // Ambil Daftar Nama
-        async function muatDaftar(){
+        // Ambil daftar nama
+        async function muat() {
             try {
-                let p = await fetch(URL_API + '?aksi=daftar_pekerja').then(r=>r.json());
-                let m = await fetch(URL_API + '?aksi=daftar_mesin').then(r=>r.json());
-                pilihPekerja.innerHTML='<option value="">-- Pilih Nama Pekerja --</option>';
-                pilihMesin.innerHTML='<option value="">-- Pilih Nama Mesin --</option>';
-                p.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihPekerja.appendChild(o);});
-                m.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihMesin.appendChild(o);});
-            } catch (e) {
-                alert("❌ Gagal memuat daftar!");
+                let pk = await fetch(URL_API+'?aksi=daftar_pekerja').then(r=>r.json());
+                let ms = await fetch(URL_API+'?aksi=daftar_mesin').then(r=>r.json());
+                pk.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pekerja.appendChild(o);});
+                ms.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;mesin.appendChild(o);});
+            } catch(e) {
+                console.log("Tidak ada daftar, lanjutkan..");
             }
         }
 
-        // PROSES SIMPAN DATA
-        document.getElementById('formProduksi').addEventListener('submit', function(e) {
+        // Simpan data
+        document.getElementById('form').addEventListener('submit', e=>{
             e.preventDefault();
-            
-            const sekarang = new Date();
-            const tgl = sekarang.getDate() + "/" + (sekarang.getMonth()+1) + "/" + sekarang.getFullYear();
-            const jam = sekarang.getHours() + ":" + String(sekarang.getMinutes()).padStart(2,'0') + ":" + String(sekarang.getSeconds()).padStart(2,'0');
+            const now = new Date();
+            const tgl = now.toISOString();
+            const jam = now.toISOString();
 
             fetch(URL_API + 
-                `?tanggal=${tgl}` +                                 
-                `&waktu=${jam}` +                                   
-                `&pekerja=${encodeURIComponent(pilihPekerja.value)}` + 
-                `&mesin=${encodeURIComponent(pilihMesin.value)}` +     
-                `&namaFile=${encodeURIComponent(document.getElementById('namaFile').value)}` + 
-                `&stitch=${encodeURIComponent(document.getElementById('jumlahStich').value)}` + 
-                `&persen=${encodeURIComponent(document.getElementById('persentase').value)}` +  
-                `&jumlah=${encodeURIComponent(document.getElementById('jumlahDikerjakan').value)}` + 
-                `&pemesan=${encodeURIComponent(document.getElementById('namaPemesan').value)}`,    
-            {method: 'POST'})
-            .then(() => {
-                alert('✅ Data berhasil disimpan!');
-                document.getElementById('formProduksi').reset();
-                persen.value = '100%';
-            })
-            .catch(err => alert('❌ Gagal simpan: ' + err));
+                `?tanggal=${tgl}&waktu=${jam}` +
+                `&pekerja=${encodeURIComponent(pekerja.value)}` +
+                `&mesin=${encodeURIComponent(mesin.value)}` +
+                `&namaFile=${encodeURIComponent(namaFile.value)}` +
+                `&stitch=${encodeURIComponent(stitch.value)}` +
+                `&persen=${encodeURIComponent(persen.value)}` +
+                `&jumlah=${jumlah.value}` +
+                `&pemesan=${encodeURIComponent(pemesan.value)}`,
+            {method:'POST'})
+            .then(()=>{alert('✅ Tersimpan!'); e.target.reset(); p.value='100%';})
+            .catch(()=>alert('❌ Gagal simpan!'));
         });
 
-        muatDaftar();
+        muat();
     </script>
 </body>
 </html>
