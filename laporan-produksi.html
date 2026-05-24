@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Produksi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#005b96',
+                        secondary: '#0071bc',
+                        netral: '#f0f4f8',
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Roboto', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+            .scrollbar-hide::-webkit-scrollbar { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-netral font-sans min-h-screen py-8 px-4">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-[clamp(1.8rem,3vw,2.2rem)] font-bold text-primary text-center mb-8">📊 Laporan Data Produksi</h1>
+        <a href="index.html" class="text-secondary font-medium hover:underline inline-block mb-6"><i class="fa fa-arrow-left mr-1"></i> Kembali ke Beranda</a>
+
+        <div id="panelAdmin" class="hidden bg-white rounded-xl shadow-md border border-gray-200 p-5 mb-6 transition-all duration-300">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-primary font-semibold text-lg"><i class="fa fa-user-circle mr-2"></i>Mode Administrator</p>
+                    <p class="text-sm text-gray-500">Lihat data bulan lain atau unduh laporan di sini</p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <select id="pilihBulan" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition">
+                        <option value="1">Januari</option><option value="2">Februari</option><option value="3">Maret</option><option value="4">April</option>
+                        <option value="5">Mei</option><option value="6">Juni</option><option value="7">Juli</option><option value="8">Agustus</option>
+                        <option value="9">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option>
+                    </select>
+                    <select id="pilihTahun" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition"></select>
+                    <button onclick="tampilkanLaporan(true)" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-primary transition font-medium">Tampilkan</button>
+
+                    <div class="relative group">
+                        <button class="bg-gradient-to-b from-secondary to-primary text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-shadow flex items-center gap-2 font-medium">
+                            <i class="fa fa-download"></i> Unduh Laporan <i class="fa fa-angle-down ml-1"></i>
+                        </button>
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 z-10 hidden group-hover:block">
+                            <ul class="py-2">
+                                <li><button onclick="unduhData('excel')" class="w-full text-left px-4 py-2 hover:bg-netral flex items-center gap-2"><i class="fa fa-file-excel-o text-green-600"></i> Format Excel (.xlsx)</button></li>
+                                <li><button onclick="unduhData('csv')" class="w-full text-left px-4 py-2 hover:bg-netral flex items-center gap-2"><i class="fa fa-file-text-o text-blue-600"></i> Format CSV (.csv)</button></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <button onclick="logout()" class="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition text-sm">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-x-auto scrollbar-hide">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gradient-to-r from-secondary to-primary text-white uppercase">
+                    <tr>
+                        <th class="px-4 py-3">No</th>
+                        <th class="px-4 py-3">Tanggal</th>
+                        <th class="px-4 py-3">Pekerja</th>
+                        <th class="px-4 py-3">Mesin</th>
+                        <th class="px-4 py-3">Nama File</th>
+                        <th class="px-4 py-3">Stitch</th>
+                        <th class="px-4 py-3">Persen</th>
+                        <th class="px-4 py-3">Jml Kerja</th>
+                        <th class="px-4 py-3">Pemesan</th>
+                        <th id="kolomAksi" class="px-4 py-3 text-center hidden">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="isiTabel" class="divide-y divide-gray-200">
+                    <tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">🔄 Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const URL_API = "https://script.google.com/macros/s/AKfycbz6dCBL8vJzvTVKkZ0T-gWian06L6lUMhkKy4Ob3i6xyeM4HVxzMPCyJLuYfJ4pG1oe/exec";
+        const adalahAdmin = localStorage.getItem('isLogin') === 'true';
+        let dataGlobal = [];
+
+        function logout() { localStorage.removeItem('isLogin'); alert('Keluar berhasil.'); location.reload(); }
+
+        function isiTahun(){
+            let thnSekarang = new Date().getFullYear();
+            let el = document.getElementById('pilihTahun');
+            for(let i = thnSekarang; i > thnSekarang-5; i--){
+                let o = document.createElement('option'); o.value=i; o.textContent=i; el.appendChild(o);
+            }
+            el.value = thnSekarang;
+            document.getElementById('pilihBulan').value = new Date().getMonth()+1;
+        }
+
+        async function tampilkanLaporan(dariFilter = false) {
+            let url;
+            if(adalahAdmin && dariFilter){
+                let bln = document.getElementById('pilihBulan').value;
+                let thn = document.getElementById('pilihTahun').value;
+                url = URL_API + `?bulan=${bln}&tahun=${thn}`;
+            } else {
+                url = URL_API + '?bulan_ini=1'; 
+            }
+
+            const res = await fetch(url);
+            dataGlobal = await res.json();
+
+            const isi = document.getElementById('isiTabel');
+            isi.innerHTML = '';
+            
+            if(dataGlobal.length === 0) { 
+                isi.innerHTML = '<tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">❌ Tidak ada data pada periode ini.</td></tr>'; 
+                return; 
+            }
+            
+            dataGlobal.forEach((item, i) => {
+                const kolomAksi = adalahAdmin ? `
+                    <td class="px-4 py-2 text-center">
+                        <button class="bg-amber-500 text-white px-2 py-1 rounded text-xs hover:bg-amber-600" onclick="editData(${i})">Ubah</button>
+                        <button class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 ml-1" onclick="hapusData(${i})">Hapus</button>
+                    </td>` : `<td class="px-4 py-2 text-center">-</td>`;
+
+                const baris = document.createElement('tr');
+                baris.className = 'hover:bg-netral transition-colors';
+                baris.innerHTML = `
+                    <td class="px-4 py-2">${i+1}</td>
+                    <td class="px-4 py-2">${item.tanggal}</td>
+                    <td class="px-4 py-2">${item.pekerja}</td>
+                    <td class="px-4 py-2">${item.mesin}</td>
+                    <td class="px-4 py-2">${item.namaFile}</td>
+                    <td class="px-4 py-2">${item.stitch}</td>
+                    <td class="px-4 py-2">${item.persen}</td>
+                    <td class="px-4 py-2">${item.jumlah}</td>
+                    <td class="px-4 py-2">${item.pemesan}</td>
+                    ${kolomAksi}
+                `;
+                isi.appendChild(baris);
+            });
+        }
+
+        function unduhData(tipe){
+            if(dataGlobal.length === 0) return alert("⚠️ Tidak ada data untuk diunduh.");
+            
+            const dataUntukUnduh = dataGlobal.map((item, i) => ({
+                "No": i+1,
+                "Tanggal": item.tanggal,
+                "Nama Pekerja": item.pekerja,
+                "Nama Mesin": item.mesin,
+                "Nama File / Desain": item.namaFile,
+                "Jumlah Stitch": item.stitch,
+                "Persentase": item.persen,
+                "Jumlah Dikerjakan": item.jumlah,
+                "Nama Pemesan": item.pemesan
+            }));
+
+            const namaFile = `Laporan_Produksi_${new Date().toLocaleDateString('id-ID')}`;
+
+            if(tipe === 'excel'){
+                const ws = XLSX.utils.json_to_sheet(dataUntukUnduh);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Data");
+                XLSX.writeFile(wb, namaFile + ".xlsx");
+            } 
+            else if(tipe === 'csv'){
+                const ws = XLSX.utils.json_to_sheet(dataUntukUnduh);
+                const csv = XLSX.utils.sheet_to_csv(ws);
+                const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"});
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", namaFile + ".csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        async function editData(index) {
+            if(!adalahAdmin) return;
+            const baru = { 
+                pekerja: prompt('Nama Pekerja:'), mesin: prompt('Nama Mesin:'), namaFile: prompt('Nama File:'),
+                stitch: prompt('Jumlah Stitch:'), persen: prompt('Persentase:'), jumlah: prompt('Jumlah:'), pemesan: prompt('Nama Pemesan:') 
+            };
+            if(!baru.pekerja) return;
+            await fetch(URL_API + `?fungsi=ubahBaris&indeks=${index}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
+            tampilkanLaporan();
+        }
+        async function hapusData(index) {
+            if(!adalahAdmin || !confirm('⚠️ Yakin ingin menghapus data ini?')) return;
+            await fetch(URL_API + `?fungsi=hapusBaris&indeks=${index}`, {method:'POST'});
+            tampilkanLaporan();
+        }
+
+        window.onload = function() {
+            if(adalahAdmin) {
+                document.getElementById('kolomAksi').classList.remove('hidden');
+                document.getElementById('panelAdmin').classList.remove('hidden');
+                isiTahun();
+            }
+            tampilkanLaporan();
+        };
+    </script>
+</body>
+</html>

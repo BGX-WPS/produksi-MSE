@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Data Produksi</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f0f4f8; padding: 2rem; max-width: 600px; margin: 0 auto; }
+        h1 { color: #005b96; text-align: center; margin-bottom: 2rem; font-weight: 600; }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #334155; }
+        input, select { width: 100%; padding: 0.8rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background-color: #fff; }
+        button { background-color: #0071bc; color: white; border: none; padding: 0.9rem 1.5rem; border-radius: 6px; font-size: 1rem; font-weight: 500; cursor: pointer; width: 100%; margin-top: 1rem; transition: background 0.3s; }
+        button:hover { background-color: #005b96; }
+        .link { display: inline-block; margin-top: 1.5rem; color: #0071bc; text-decoration: none; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="link">← Kembali ke Beranda</a>
+    <h1>Form Input Produksi</h1>
+    <form id="formProduksi">
+        <div class="form-group">
+            <label>Nama Pekerja</label>
+            <select id="namaPekerja" required><option value="">-- Memuat Daftar...</option></select>
+        </div>
+        <div class="form-group">
+            <label>Nama Mesin</label>
+            <select id="namaMesin" required><option value="">-- Memuat Daftar...</option></select>
+        </div>
+        <div class="form-group">
+            <label>Nama File / Desain</label>
+            <input type="text" id="namaFile" required>
+        </div>
+        <div class="form-group">
+            <label>Jumlah Stitch</label>
+            <input type="text" id="jumlahStich" required placeholder="Contoh: 15.000">
+        </div>
+        <div class="form-group">
+            <label>Persentase</label>
+            <input type="text" id="persentase" value="100%" required>
+        </div>
+        <div class="form-group">
+            <label>Jumlah Dikerjakan</label>
+            <input type="number" id="jumlahDikerjakan" required>
+        </div>
+        <div class="form-group">
+            <label>Nama Pemesan</label>
+            <input type="text" id="namaPemesan" required>
+        </div>
+        <button type="submit">✅ Simpan Data</button>
+    </form>
+    <a href="laporan-produksi.html" class="link">Lihat Laporan Produksi →</a>
+
+    <script>
+        const URL_API = "https://script.google.com/macros/s/AKfycbz6dCBL8vJzvTVKkZ0T-gWian06L6lUMhkKy4Ob3i6xyeM4HVxzMPCyJLuYfJ4pG1oe/exec";
+        const pilihPekerja = document.getElementById('namaPekerja');
+        const pilihMesin = document.getElementById('namaMesin');
+
+        function formatRibuan(angka) { return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+        document.getElementById('jumlahStich').addEventListener('input', function(){
+            let nilai = this.value.replace(/\D/g,'');
+            this.value = nilai ? formatRibuan(nilai) : '';
+        });
+        
+        const persen = document.getElementById('persentase');
+        persen.addEventListener('focus', () => { persen.value = '%'; persen.selectionStart = 0; });
+        persen.addEventListener('input', () => {
+            let angka = persen.value.replace(/\D/g,'');
+            persen.value = angka ? angka + '%' : '%';
+            persen.selectionStart = persen.value.length - 1;
+        });
+        persen.addEventListener('blur', () => { if(persen.value === '' || persen.value === '%') persen.value = '100%'; });
+
+        async function muatDaftar(){
+            let p = await fetch(URL_API + '?aksi=daftar_pekerja').then(r=>r.json());
+            let m = await fetch(URL_API + '?aksi=daftar_mesin').then(r=>r.json());
+            pilihPekerja.innerHTML='<option value="">-- Pilih Nama Pekerja --</option>';
+            pilihMesin.innerHTML='<option value="">-- Pilih Nama Mesin --</option>';
+            p.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihPekerja.appendChild(o);});
+            m.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihMesin.appendChild(o);});
+        }
+
+        document.getElementById('formProduksi').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const data = {
+                tanggal: new Date().toLocaleString('id-ID'), pekerja: pilihPekerja.value, mesin: pilihMesin.value,
+                namaFile: document.getElementById('namaFile').value, stitch: document.getElementById('jumlahStich').value,
+                persen: persen.value, jumlah: document.getElementById('jumlahDikerjakan').value, pemesan: document.getElementById('namaPemesan').value
+            };
+            fetch(URL_API + `?tanggal=${encodeURIComponent(data.tanggal)}&pekerja=${encodeURIComponent(data.pekerja)}&mesin=${encodeURIComponent(data.mesin)}&namaFile=${encodeURIComponent(data.namaFile)}&stitch=${encodeURIComponent(data.stitch)}&persen=${encodeURIComponent(data.persen)}&jumlah=${encodeURIComponent(data.jumlah)}&pemesan=${encodeURIComponent(data.pemesan)}`, {method: 'POST'})
+            .then(() => {
+                alert('✅ Data berhasil disimpan ke Server!');
+                document.getElementById('namaFile').value = ''; document.getElementById('jumlahStich').value = '';
+                document.getElementById('jumlahDikerjakan').value = ''; document.getElementById('namaPemesan').value = ''; persen.value = '100%';
+            });
+        });
+
+        muatDaftar();
+    </script>
+</body>
+</html>

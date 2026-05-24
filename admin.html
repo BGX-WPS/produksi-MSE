@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halaman Admin - Kelola Data</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f0f4f8; padding: 2rem; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #005b96; text-align: center; margin-bottom: 2rem; font-weight: 600; }
+        h2 { color: #334155; margin: 1.5rem 0 1rem; font-size: 1.2rem; font-weight: 600; }
+        .card { background-color: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 1.5rem; }
+        .input-group { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        input { flex: 1; padding: 0.7rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; }
+        button { padding: 0.7rem 1.2rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .btn-simpan { background-color: #0071bc; color: white; }
+        .btn-hapus { background-color: #dc2626; color: white; }
+        .btn-edit { background-color: #f59e0b; color: white; }
+        .link { display: inline-block; margin-bottom: 1rem; color: #0071bc; text-decoration: none; font-weight: 500; }
+        .logout { text-align: right; margin-bottom: 1rem; }
+        .btn-logout { background-color: #dc2626; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; }
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem; background-color: #f8fafc; border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logout"><button class="btn-logout" onclick="logout()">🚪 Keluar (Logout)</button></div>
+        <a href="index.html" class="link">← Kembali ke Halaman Utama</a>
+        <h1>Panel Administrasi</h1>
+
+        <div class="card">
+            <h2>Kelola Daftar Nama Pekerja</h2>
+            <div class="input-group">
+                <input type="text" id="namaPekerjaBaru" placeholder="Masukkan nama...">
+                <button class="btn-simpan" onclick="tambah('pekerja')">Tambah</button>
+            </div>
+            <div id="daftarPekerja"></div>
+        </div>
+
+        <div class="card">
+            <h2>Kelola Daftar Nama Mesin</h2>
+            <div class="input-group">
+                <input type="text" id="namaMesinBaru" placeholder="Masukkan nama...">
+                <button class="btn-simpan" onclick="tambah('mesin')">Tambah</button>
+            </div>
+            <div id="daftarMesin"></div>
+        </div>
+    </div>
+
+    <script>
+        const URL_API = "https://script.google.com/macros/s/AKfycbz6dCBL8vJzvTVKkZ0T-gWian06L6lUMhkKy4Ob3i6xyeM4HVxzMPCyJLuYfJ4pG1oe/exec";
+        if(localStorage.getItem('isLogin') !== 'true') { alert('⚠️ Akses ditolak! Silakan login dulu.'); window.location.href = 'login.html'; }
+        function logout() { localStorage.removeItem('isLogin'); alert('Anda telah keluar.'); window.location.href = 'login.html'; }
+
+        async function ambilDaftar(jenis) {
+            let res = await fetch(URL_API + '?aksi=daftar_' + jenis);
+            return await res.json();
+        }
+        async function tambah(jenis){
+            let nama = (jenis==='pekerja') ? document.getElementById('namaPekerjaBaru').value : document.getElementById('namaMesinBaru').value;
+            if(!nama.trim()) return;
+            await fetch(URL_API + `?aksi=kelola_${jenis}&metode=tambah&nama=${nama}`, {method:'POST'});
+            muatSemua();
+            (jenis==='pekerja') ? document.getElementById('namaPekerjaBaru').value='' : document.getElementById('namaMesinBaru').value='';
+        }
+        async function hapus(jenis, idx){
+            await fetch(URL_API + `?aksi=kelola_${jenis}&metode=hapus&idx=${idx}`, {method:'POST'});
+            muatSemua();
+        }
+        async function ubah(jenis, idx, lama){
+            let baru = prompt('Ubah nama menjadi:', lama);
+            if(!baru) return;
+            await fetch(URL_API + `?aksi=kelola_${jenis}&metode=ubah&idx=${idx}&namaBaru=${baru}`, {method:'POST'});
+            muatSemua();
+        }
+        async function muatSemua(){
+            let p = await ambilDaftar('pekerja');
+            let m = await ambilDaftar('mesin');
+            let ep = document.getElementById('daftarPekerja'), em = document.getElementById('daftarMesin');
+            ep.innerHTML='';em.innerHTML='';
+            p.forEach((n,i)=>ep.innerHTML+=`<div class="list-item"><span>${n}</span><div><button class="btn-edit" onclick="ubah('pekerja',${i},'${n}')">Ubah</button><button class="btn-hapus" onclick="hapus('pekerja',${i})">Hapus</button></div></div>`);
+            m.forEach((n,i)=>em.innerHTML+=`<div class="list-item"><span>${n}</span><div><button class="btn-edit" onclick="ubah('mesin',${i},'${n}')">Ubah</button><button class="btn-hapus" onclick="hapus('mesin',${i})">Hapus</button></div></div>`);
+        }
+        muatSemua();
+    </script>
+</body>
+</html>
