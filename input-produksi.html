@@ -83,12 +83,24 @@
 
         document.getElementById('formProduksi').addEventListener('submit', function(e) {
             e.preventDefault();
+            // ✅ PISAHKAN TANGGAL DAN WAKTU
+            const sekarang = new Date();
+            const tgl = sekarang.getDate() + "/" + (sekarang.getMonth()+1) + "/" + sekarang.getFullYear();
+            const jam = sekarang.getHours() + ":" + String(sekarang.getMinutes()).padStart(2,'0') + ":" + String(sekarang.getSeconds()).padStart(2,'0');
+
             const data = {
-                tanggal: new Date().toLocaleString('id-ID'), pekerja: pilihPekerja.value, mesin: pilihMesin.value,
-                namaFile: document.getElementById('namaFile').value, stitch: document.getElementById('jumlahStich').value,
-                persen: persen.value, jumlah: document.getElementById('jumlahDikerjakan').value, pemesan: document.getElementById('namaPemesan').value
+                tanggal: tgl,
+                waktu: jam,
+                pekerja: pilihPekerja.value, 
+                mesin: pilihMesin.value,
+                namaFile: document.getElementById('namaFile').value, 
+                stitch: document.getElementById('jumlahStich').value,
+                persen: persen.value, 
+                jumlah: document.getElementById('jumlahDikerjakan').value, 
+                pemesan: document.getElementById('namaPemesan').value
             };
-            fetch(URL_API + `?tanggal=${encodeURIComponent(data.tanggal)}&pekerja=${encodeURIComponent(data.pekerja)}&mesin=${encodeURIComponent(data.mesin)}&namaFile=${encodeURIComponent(data.namaFile)}&stitch=${encodeURIComponent(data.stitch)}&persen=${encodeURIComponent(data.persen)}&jumlah=${encodeURIComponent(data.jumlah)}&pemesan=${encodeURIComponent(data.pemesan)}`, {method: 'POST'})
+            
+            fetch(URL_API + `?tanggal=${data.tanggal}&waktu=${data.waktu}&pekerja=${encodeURIComponent(data.pekerja)}&mesin=${encodeURIComponent(data.mesin)}&namaFile=${encodeURIComponent(data.namaFile)}&stitch=${encodeURIComponent(data.stitch)}&persen=${encodeURIComponent(data.persen)}&jumlah=${encodeURIComponent(data.jumlah)}&pemesan=${encodeURIComponent(data.pemesan)}`, {method: 'POST'})
             .then(() => {
                 alert('✅ Data berhasil disimpan ke Server!');
                 document.getElementById('namaFile').value = ''; document.getElementById('jumlahStich').value = '';
