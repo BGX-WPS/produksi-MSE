@@ -53,8 +53,9 @@
     <a href="laporan-produksi.html" class="link">Lihat Laporan Produksi →</a>
 
     <script>
-        // 🔴 LINK BARU DIMASUKKAN
-        const URL_API = "https://script.google.com/macros/s/AKfycbxG8SOuzKJLvi6Zy0XJwNGd87-cxr4NvqdWoNwza0EuIIb5hxp0HapcAh8rBLkGxKw/exec";
+        // ✅ LINK SUDAH DIMASUKKAN
+        const URL_API = "https://script.google.com/macros/s/AKfycbxVtCwAYyxg9j-pw2Tny1V2hNfCxK8TO9kYDmLoR89oK_04ohX6ixLHQksMyvPVFD4l/exec";
+        
         const pilihPekerja = document.getElementById('namaPekerja');
         const pilihMesin = document.getElementById('namaMesin');
 
@@ -65,7 +66,7 @@
             this.value = nilai ? formatRibuan(nilai) : '';
         });
 
-        // Format Persen
+        // Format Persen Otomatis
         const persen = document.getElementById('persentase');
         persen.addEventListener('focus', () => { persen.value = '%'; persen.selectionStart = 0; });
         persen.addEventListener('input', () => {
@@ -75,43 +76,45 @@
         });
         persen.addEventListener('blur', () => { if(persen.value === '' || persen.value === '%') persen.value = '100%'; });
 
-        // Ambil Daftar
+        // Ambil Daftar Nama
         async function muatDaftar(){
-            let p = await fetch(URL_API + '?aksi=daftar_pekerja').then(r=>r.json());
-            let m = await fetch(URL_API + '?aksi=daftar_mesin').then(r=>r.json());
-            pilihPekerja.innerHTML='<option value="">-- Pilih Nama Pekerja --</option>';
-            pilihMesin.innerHTML='<option value="">-- Pilih Nama Mesin --</option>';
-            p.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihPekerja.appendChild(o);});
-            m.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihMesin.appendChild(o);});
+            try {
+                let p = await fetch(URL_API + '?aksi=daftar_pekerja').then(r=>r.json());
+                let m = await fetch(URL_API + '?aksi=daftar_mesin').then(r=>r.json());
+                pilihPekerja.innerHTML='<option value="">-- Pilih Nama Pekerja --</option>';
+                pilihMesin.innerHTML='<option value="">-- Pilih Nama Mesin --</option>';
+                p.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihPekerja.appendChild(o);});
+                m.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;pilihMesin.appendChild(o);});
+            } catch (e) {
+                alert("❌ Gagal memuat daftar!");
+            }
         }
 
-        // ✅ URUTAN KIRIM DATA DIKUNCI AGAR TIDAK TERTUKAR
+        // PROSES SIMPAN DATA
         document.getElementById('formProduksi').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Pisahkan Tanggal dan Waktu
             const sekarang = new Date();
             const tgl = sekarang.getDate() + "/" + (sekarang.getMonth()+1) + "/" + sekarang.getFullYear();
             const jam = sekarang.getHours() + ":" + String(sekarang.getMinutes()).padStart(2,'0') + ":" + String(sekarang.getSeconds()).padStart(2,'0');
 
-            // KIRIM: TANGGAL -> WAKTU -> PEKERJA -> ...
             fetch(URL_API + 
-                `?tanggal=${tgl}` +                                 // 1. TANGGAL
-                `&waktu=${jam}` +                                   // 2. WAKTU ✅ (KOLOM B)
-                `&pekerja=${encodeURIComponent(pilihPekerja.value)}` + // 3. PEKERJA ✅ (KOLOM C)
-                `&mesin=${encodeURIComponent(pilihMesin.value)}` +     // 4. MESIN
-                `&namaFile=${encodeURIComponent(document.getElementById('namaFile').value)}` + // 5. NAMA FILE
-                `&stitch=${encodeURIComponent(document.getElementById('jumlahStich').value)}` + // 6. STITCH
-                `&persen=${encodeURIComponent(document.getElementById('persentase').value)}` +  // 7. PERSEN
-                `&jumlah=${encodeURIComponent(document.getElementById('jumlahDikerjakan').value)}` + // 8. JUMLAH
-                `&pemesan=${encodeURIComponent(document.getElementById('namaPemesan').value)}`,    // 9. PEMESAN
+                `?tanggal=${tgl}` +                                 
+                `&waktu=${jam}` +                                   
+                `&pekerja=${encodeURIComponent(pilihPekerja.value)}` + 
+                `&mesin=${encodeURIComponent(pilihMesin.value)}` +     
+                `&namaFile=${encodeURIComponent(document.getElementById('namaFile').value)}` + 
+                `&stitch=${encodeURIComponent(document.getElementById('jumlahStich').value)}` + 
+                `&persen=${encodeURIComponent(document.getElementById('persentase').value)}` +  
+                `&jumlah=${encodeURIComponent(document.getElementById('jumlahDikerjakan').value)}` + 
+                `&pemesan=${encodeURIComponent(document.getElementById('namaPemesan').value)}`,    
             {method: 'POST'})
             .then(() => {
-                alert('✅ Data berhasil disimpan! Kolom B = Waktu, Kolom C = Pekerja (Sudah Pas)');
+                alert('✅ Data berhasil disimpan!');
                 document.getElementById('formProduksi').reset();
                 persen.value = '100%';
             })
-            .catch(err => alert('❌ Gagal: ' + err));
+            .catch(err => alert('❌ Gagal simpan: ' + err));
         });
 
         muatDaftar();
