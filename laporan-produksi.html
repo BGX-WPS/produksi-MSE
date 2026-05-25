@@ -37,8 +37,8 @@
                 <thead class="bg-gradient-to-r from-secondary to-primary text-white">
                     <tr>
                         <th class="p-2 text-center">No</th>
-                        <th class="p-2">Tanggal</th> <!-- Hanya Tanggal -->
-                        <th class="p-2">Waktu</th>   <!-- Hanya Jam -->
+                        <th class="p-2">Tanggal</th> <!-- KOLOM TANGGAL -->
+                        <th class="p-2">Waktu</th>   <!-- KOLOM WAKTU -->
                         <th class="p-2">Pekerja</th>
                         <th class="p-2">Mesin</th>
                         <th class="p-2">Nama File</th>
@@ -66,53 +66,26 @@
         function logout() { localStorage.removeItem('isLogin'); location.reload(); }
 
         // ==================================================
-        // FUNGSI UBAH FORMAT: PISAH TANGGAL DAN WAKTU
-        // ==================================================
-        function ambilTanggal(isoText) {
-            if (!isoText) return "-";
-            try {
-                const tglObj = new Date(isoText);
-                // Format: dd/mm/yyyy
-                const d = String(tglObj.getDate()).padStart(2, '0');
-                const m = String(tglObj.getMonth() + 1).padStart(2, '0');
-                const y = tglObj.getFullYear();
-                return `${d}/${m}/${y}`;
-            } catch {
-                return isoText;
-            }
-        }
-
-        function ambilWaktu(isoText) {
-            if (!isoText) return "-";
-            try {
-                const jamObj = new Date(isoText);
-                // Format: hh:mm:ss
-                const h = String(jamObj.getHours()).padStart(2, '0');
-                const m = String(jamObj.getMinutes()).padStart(2, '0');
-                const s = String(jamObj.getSeconds()).padStart(2, '0');
-                return `${h}:${m}:${s}`;
-            } catch {
-                return isoText;
-            }
-        }
-
-        // ==================================================
-        // AMBIL DATA DAN PERBAIKI FORMAT YANG TERSELIMPI
+        // BACA DATA DARI STRUKTUR KHUSUS ANDA
         // ==================================================
         async function ambilData() {
             try {
                 const res = await fetch(URL_API);
                 const dataMentah = await res.json();
+
+                // LOGIKA KHUSUS UNTUK FORMAT ANDA: 
+                // Bentuk asli: [{"page_id":0,"text_block":[{"text":"[ {DATA_DALAM_JSON} ]"}]}]
+                let teksJson = "";
                 
-                // ⚠️ PERBAIKAN PENTING: Data dari link Anda bentuknya seperti ini: [ [ {data} ] ]
-                // Kita ambil isi dalamnya agar terbaca benar
-                if (Array.isArray(dataMentah) && dataMentah.length > 0 && Array.isArray(dataMentah[0])) {
-                    DATA = dataMentah[0]; // Ambil array dalamnya
+                // Cek apakah strukturnya seperti itu
+                if (dataMentah && dataMentah[0] && dataMentah[0].text_block && dataMentah[0].text_block[0]) {
+                    teksJson = dataMentah[0].text_block[0].text; // Ambil teks panjangnya
+                    DATA = JSON.parse(teksJson); // Ubah teks jadi data asli
                 } else {
-                    DATA = dataMentah; // Bentuk biasa
+                    DATA = dataMentah; // Jika format biasa, pakai ini
                 }
 
-                // Pastikan DATA adalah array
+                // Pastikan array
                 if (!Array.isArray(DATA)) DATA = [];
 
                 tampilkan();
@@ -124,7 +97,7 @@
         }
 
         // ==================================================
-        // TAMPILKAN KE TABEL
+        // TAMPILKAN KE TABEL - TERPISAH TANGGAL & WAKTU
         // ==================================================
         function tampilkan() {
             const isi = document.getElementById('isiTabel');
@@ -147,12 +120,12 @@
                     <button class="bg-red-500 text-white px-1 text-xs rounded" onclick="hapus(${i})">Hapus</button>
                 </td>` : `<td class="p-1 text-center">-</td>`;
 
-                // BARIS DATA
+                // TAMPILKAN: TANGGAL DAN WAKTU DARI DATA ASLI
                 isi.innerHTML += `
                 <tr class="hover:bg-gray-50">
                     <td class="p-1 text-center">${i+1}</td>
-                    <td class="p-1">${ambilTanggal(item.tanggal)}</td> <!-- TANGGAL SAJA -->
-                    <td class="p-1">${ambilWaktu(item.waktu)}</td>     <!-- WAKTU SAJA -->
+                    <td class="p-1">${formatTanggal(item.tanggal)}</td> <!-- TANGGAL -->
+                    <td class="p-1">${formatWaktu(item.waktu)}</td>     <!-- WAKTU -->
                     <td class="p-1">${item.pekerja || "-"}</td>
                     <td class="p-1">${item.mesin || "-"}</td>
                     <td class="p-1">${item.namaFile || "-"}</td>
@@ -165,62 +138,23 @@
             });
         }
 
-        // ==================================================
-        // FITUR ADMIN
-        // ==================================================
-        async function edit(i) {
-            const brg = DATA[i];
-            const baru = {
-                tanggal: prompt('Tanggal (Format: 2026-05-23T17:00:00.000Z):', brg.tanggal), 
-                waktu: prompt('Waktu (Format: 1899-12-30T05:26:28.000Z):', brg.waktu),
-                pekerja: prompt('Nama Pekerja:', brg.pekerja), 
-                mesin: prompt('Nama Mesin:', brg.mesin),
-                namaFile: prompt('Nama File:', brg.namaFile), 
-                stitch: prompt('Jumlah Stitch:', brg.stitch),
-                persen: prompt('Persentase:', brg.persen), 
-                jumlah: prompt('Jumlah:', brg.jumlah),
-                pemesan: prompt('Nama Pemesan:', brg.pemesan)
-            };
-            if(!baru.pekerja) return;
-            await fetch(`${URL_API}?aksi=ubah&indeks=${i}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
-            ambilData();
+        // Fungsi bantu format tampilan
+        function formatTanggal(tglInput) {
+            if (!tglInput) return "-";
+            // Jika data baru dikirim: sudah berupa teks dd/mm/yyyy
+            if (String(tglInput).includes("/")) return tglInput;
+            // Jika data lama: ubah dari ISO ke dd/mm/yyyy
+            try {
+                const d = new Date(tglInput);
+                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+            } catch { return tglInput; }
         }
 
-        async function hapus(i) {
-            if(!confirm('Yakin ingin menghapus data ini?')) return;
-            await fetch(`${URL_API}?aksi=hapus&indeks=${i}`, {method:'POST'});
-            ambilData();
-        }
-
-        // ==================================================
-        // UNDUH EXCEL
-        // ==================================================
-        function unduhExcel() {
-            const dataUnduh = DATA.map((x,i)=>({
-                "No":i+1,
-                "Tanggal": ambilTanggal(x.tanggal),
-                "Waktu": ambilWaktu(x.waktu),
-                "Pekerja": x.pekerja,
-                "Mesin": x.mesin,
-                "Nama File": x.namaFile,
-                "Stitch": x.stitch,
-                "Persen": x.persen,
-                "Jumlah": x.jumlah,
-                "Pemesan": x.pemesan
-            }));
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUnduh), "Semua Data Produksi");
-            XLSX.writeFile(wb, "Laporan_Produksi.xlsx");
-        }
-
-        // MULAI PROGRAM
-        window.onload = ()=>{
-            if(IS_ADMIN) { 
-                document.getElementById('panelAdmin').classList.remove('hidden'); 
-                document.getElementById('kolomAksi').classList.remove('hidden'); 
-            }
-            ambilData(); // Jalankan ambil data
-        };
-    </script>
-</body>
-</html>
+        function formatWaktu(wktInput) {
+            if (!wktInput) return "-";
+            // Jika data baru dikirim: sudah berupa teks hh:mm:ss
+            if (String(wktInput).includes(":")) return wktInput;
+            // Jika data lama: ubah dari ISO ke hh:mm:ss
+            try {
+                const d = new Date(wktInput);
+                return `${String(d
