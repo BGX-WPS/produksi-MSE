@@ -37,6 +37,190 @@
                 <thead class="bg-gradient-to-r from-secondary to-primary text-white">
                     <tr>
                         <th class="p-2 text-center">No</th>
+                        <th class="p-2">Tanggal</th> <!-- HANYA dd/mm/yyyy -->
+                        <th class="p-2">Waktu</th>   <!-- HANYA hh:mm:ss -->
+                        <th class="p-2">Pekerja</th>
+                        <th class="p-2">Mesin</th>
+                        <th class="p-2">Nama File</th>
+                        <th class="p-2 text-right">Stitch</th>
+                        <th class="p-2 text-center">Persen</th>
+                        <th class="p-2 text-right">Jumlah</th>
+                        <th class="p-2">Pemesan</th>
+                        <th id="kolomAksi" class="p-2 text-center hidden">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="isiTabel" class="divide-y divide-gray-200">
+                    <tr><td colspan="11" class="p-4 text-center text-gray-500">🔄 Memuat data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // LINK ANDA
+        const URL_API = "https://script.google.com/macros/s/AKfycbyRFTGf51YWezOXbwp6FqaJ7Y9f7mN6iGn4OshnU6QbgO9fCT0s3wDU1cZvGI_t6LcM/exec";
+
+        const IS_ADMIN = localStorage.getItem('isLogin') === 'true';
+        let DATA = [];
+
+        function logout() { localStorage.removeItem('isLogin'); location.reload(); }
+
+        // ==================================================
+        // PEMBACA DATA KHUSUS FORMAT ANDA (SOLUSI AKHIR)
+        // ==================================================
+        async function ambilData() {
+            try {
+                const res = await fetch(URL_API);
+                const dataMentah = await res.text(); // Baca sebagai teks murni
+
+                // Membuka lapisan data aneh Anda: [{"page_id":0,"text_block":[{"text":"[ {...} ]"}]}]
+                const regexCari = /"text":"(\[.*?\])"/; // Cari pola teks JSON di dalam
+                const cocok = dataMentah.match(regexCari);
+                
+                if (cocok && cocok[1]) {
+                    DATA = JSON.parse(cocok[1]); // Ubah jadi data asli
+                } else {
+                    DATA = []; // Jika kosong/salah
+                }
+
+                if (!Array.isArray(DATA)) DATA = [];
+                tampilkan();
+
+            } catch (err) {
+                console.error("Error:", err);
+                isiTabel.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-red-500">❌ Gagal baca data: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ==================================================
+        // FORMAT TANGGAL & WAKTU TERPISAH
+        // ==================================================
+        function formatTanggal(tglInput) {
+            if (!tglInput || tglInput === "-") return "-";
+            // Jika data baru: Sudah format dd/mm/yyyy
+            if (String(tglInput).includes("/")) return tglInput;
+            // Jika data lama: Ubah dari format ISO
+            try {
+                const d = new Date(tglInput);
+                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+            } catch { return tglInput; }
+        }
+
+        function formatWaktu(wktInput) {
+            if (!wktInput || wktInput === "-") return "-";
+            // Jika data baru: Sudah format hh:mm:ss
+            if (String(wktInput).includes(":")) return wktInput;
+            // Jika data lama: Ubah dari format ISO khusus sheet
+            if (String(wktInput).includes("1899-12-30")) {
+                try {
+                    const j = new Date(wktInput);
+                    return `${String(j.getHours()).padStart(2,'0')}:${String(j.getMinutes()).padStart(2,'0')}:${String(j.getSeconds()).padStart(2,'0')}`;
+                } catch { return wktInput; }
+            }
+            return wktInput;
+        }
+
+        // ==================================================
+        // TAMPILKAN DATA KE TABEL
+        // ==================================================
+        function tampilkan() {
+            const isi = document.getElementById('isiTabel');
+            isi.innerHTML = '';
+
+            if(DATA.length === 0) {
+                isi.innerHTML = `<tr><td colspan="11" class="p-4 text-center text-gray-500">📭 Belum ada data tersimpan</td></tr>`;
+                return;
+            }
+
+            DATA.forEach((item, i) => {
+                let persen = item.persen || "";
+                if(persen && !String(persen).includes('%')) persen = persen + '%';
+
+                const aksi = IS_ADMIN ? `
+                <td class="p-1 text-center">
+                    <button class="bg-yellow-500 text-white px-1 text-xs rounded" onclick="edit(${i})">Ubah</button>
+                    <button class="bg-red-500 text-white px-1 text-xs rounded" onclick="hapus(${i})">Hapus</button>
+                </td>` : `<td class="p-1 text-center">-</td>`;
+
+                // Baris Data
+                isi.innerHTML += `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-1 text-center">${i+1}</td>
+                    <td class="p-1">${formatTanggal(item.tanggal)}</td>
+                    <td class="p-1">${formatWaktu(item.waktu)}</td>
+                    <td class="p-1">${item.pekerja || "-"}</td>
+                    <td class="p-1">${item.mesin || "-"}</td>
+                    <td class="p-1">${item.namaFile || "-"}</td>
+                    <td class="p-1 text-right">${item.stitch || "-"}</td>
+                    <td class="p-1 text-center font-bold text-blue-600">${persen}</td>
+                    <td class="p-1 text-right">${item.jumlah || "-"}</td>
+                    <td class="p-1">${item.pemesan || "-"}</td>
+                    ${aksi}
+                </tr>`;
+            });
+        }
+
+        // ==================================================
+        // FITUR ADMIN
+        // ==================================================
+        async function edit(i) {
+            const brg = DATA[i];
+            const baru = {
+                tanggal: prompt('Tanggal:', brg.tanggal), 
+                waktu: prompt('Waktu:', brg.waktu),
+                pekerja: prompt('Pekerja:', brg.pekerja), 
+                mesin: prompt('Mesin:', brg.mesin),
+                namaFile: prompt('Nama File:', brg.namaFile), 
+                stitch: prompt('Stitch:', brg.stitch),
+                persen: prompt('Persen:', brg.persen), 
+                jumlah: prompt('Jumlah:', brg.jumlah),
+                pemesan: prompt('Pemesan:', brg.pemesan)
+            };
+            if(!baru.pekerja) return;
+            await fetch(`${URL_API}?aksi=ubah&indeks=${i}&data=${encodeURIComponent(JSON.stringify(baru))}`, {method:'POST'});
+            ambilData();
+        }
+
+        async function hapus(i) {
+            if(!confirm('Yakin hapus?')) return;
+            await fetch(`${URL_API}?aksi=hapus&indeks=${i}`, {method:'POST'});
+            ambilData();
+        }
+
+        // ==================================================
+        // UNDUH EXCEL
+        // ==================================================
+        function unduhExcel() {
+            const dataUnduh = DATA.map((x,i)=>({
+                "No":i+1,
+                "Tanggal": formatTanggal(x.tanggal),
+                "Waktu": formatWaktu(x.waktu),
+                "Pekerja": x.pekerja,
+                "Mesin": x.mesin,
+                "Nama File": x.namaFile,
+                "Stitch": x.stitch,
+                "Persen": x.persen,
+                "Jumlah": x.jumlah,
+                "Pemesan": x.pemesan
+            }));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dataUnduh), "Semua Data");
+            XLSX.writeFile(wb, "Laporan_Produksi.xlsx");
+        }
+
+        // MULAI PROGRAM
+        window.onload = ()=>{
+            if(IS_ADMIN) { 
+                document.getElementById('panelAdmin').classList.remove('hidden'); 
+                document.getElementById('kolomAksi').classList.remove('hidden'); 
+            }
+            ambilData();
+        };
+    </script>
+</body>
+</html>                <thead class="bg-gradient-to-r from-secondary to-primary text-white">
+                    <tr>
+                        <th class="p-2 text-center">No</th>
                         <th class="p-2">Tanggal</th> <!-- HANYA TANGGAL -->
                         <th class="p-2">Waktu</th>   <!-- HANYA JAM -->
                         <th class="p-2">Pekerja</th>
