@@ -48,6 +48,59 @@
     </div>
 
     <script>
+        const URL_API = "https://script.google.com/macros/s/AKfycbyRFTGf51YWezOXbwp6FqaJ7Y9f7mN6iGn4OshnU6QbgO9fCT0s3wDU1cZvGI_t6LcM/exec";
+
+        if(localStorage.getItem('isLogin') !== 'true') { alert('Akses ditolak!'); location.href='login.html'; }
+        function logout() { localStorage.removeItem('isLogin'); location.reload(); }
+
+        async function ambil(jenis) { return await fetch(URL_API+'?aksi=daftar_'+jenis).then(r=>r.json()); }
+
+        async function tambah(jenis) {
+            const nama = jenis==='pekerja' ? namaPekerja.value : namaMesin.value;
+            if(!nama) return;
+            await fetch(`${URL_API}?aksi=kelola_${jenis}&metode=tambah&nama=${nama}`, {method:'POST'});
+            jenis==='pekerja' ? namaPekerja.value='' : namaMesin.value='';
+            muatSemua();
+        }
+
+        async function hapus(jenis,idx) {
+            if(!confirm('Yakin hapus?')) return;
+            await fetch(`${URL_API}?aksi=kelola_${jenis}&metode=hapus&idx=${idx}`, {method:'POST'});
+            muatSemua();
+        }
+
+        async function ubah(jenis,idx,lama) {
+            const baru = prompt('Ubah nama:', lama);
+            if(!baru) return;
+            await fetch(`${URL_API}?aksi=kelola_${jenis}&metode=ubah&idx=${idx}&namaBaru=${baru}`, {method:'POST'});
+            muatSemua();
+        }
+
+        async function muatSemua() {
+            let p = await ambil('pekerja');
+            let m = await ambil('mesin');
+            listPekerja.innerHTML=''; listMesin.innerHTML='';
+            p.forEach((n,i)=>listPekerja.innerHTML+=`<div class="item">${n}<div><button class="btn-kuning" onclick="ubah('pekerja',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('pekerja',${i})">Hapus</button></div></div>`);
+            m.forEach((n,i)=>listMesin.innerHTML+=`<div class="item">${n}<div><button class="btn-kuning" onclick="ubah('mesin',${i},'${n}')">Ubah</button> <button class="btn-merah" onclick="hapus('mesin',${i})">Hapus</button></div></div>`);
+        }
+
+        muatSemua();
+    </script>
+</body>
+</html>            <div id="listPekerja"></div>
+        </div>
+
+        <div class="card">
+            <h2>Daftar Mesin</h2>
+            <div class="input-group">
+                <input type="text" id="namaMesin" placeholder="Nama baru...">
+                <button class="btn-biru" onclick="tambah('mesin')">Tambah</button>
+            </div>
+            <div id="listMesin"></div>
+        </div>
+    </div>
+
+    <script>
         // ✅ LINK SUDAH DIPASANG
         const URL_API = "https://script.google.com/macros/s/AKfycbyRFTGf51YWezOXbwp6FqaJ7Y9f7mN6iGn4OshnU6QbgO9fCT0s3wDU1cZvGI_t6LcM/exec";
 
